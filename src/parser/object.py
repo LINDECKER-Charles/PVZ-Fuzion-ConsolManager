@@ -1,7 +1,7 @@
 import os
 from typing import List, TypeVar 
 from abc import ABC, abstractmethod
-from parser import get_plant_almanac, get_zombie_almanac, get_achivements
+from parser.parser import get_plant_almanac, get_zombie_almanac, get_achivements
 
 T = TypeVar('T')
 

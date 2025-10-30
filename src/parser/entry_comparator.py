@@ -1,8 +1,8 @@
 import os
 import json
-from object import EntryPath, compare_lists, get_plants, get_zombies, get_achievements
+from parser.object import EntryPath, compare_lists, get_plants, get_zombies, get_achievements
 from typing import List, TypeVar
-from parser import get_all_localization
+from parser.parser import get_all_localization
 
 T = TypeVar('T')
 
@@ -56,4 +56,3 @@ if __name__ == '__main__':
 
     print("--- Merged Data ---")
     """ print(get_entity_dict(merged_data)) """
-    
