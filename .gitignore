@@ -1,3 +1,5 @@
 venv/
 build/
 src/reports
+src/__pycache__/
+src/*/__pycache__
