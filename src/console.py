@@ -5,7 +5,7 @@ from report_builder.need_trad import build_plant_report, build_zombie_report, bu
 from interface.interface import main_menu, select_localization, clear_console, choice_type_trad, press_enter_to_continue
 
 
-if __name__ == '__main__':
+def main():
 
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'PvZ_Fusion_Translator'))
     clear_console()
