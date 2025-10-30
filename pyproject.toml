@@ -1,0 +1,19 @@
+[project]
+name = "python_console"
+version = "0.1.0"
+description = "Une console Python pour gérer rapports, parsers et outils de santé projet."
+authors = [
+    { name = "Charles Lindecker", email = "charles.lindecker@outlook.fr" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "markdown",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

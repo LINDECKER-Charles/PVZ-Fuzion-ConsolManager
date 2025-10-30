@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: python_console
+Version: 0.1.0
+Summary: Une console Python pour gérer rapports, parsers et outils de santé projet.
+Author-email: Charles Lindecker <charles.lindecker@outlook.fr>
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: markdown
