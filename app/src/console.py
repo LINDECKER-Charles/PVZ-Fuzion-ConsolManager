@@ -6,7 +6,7 @@ from interface.interface import main_menu, select_localization, clear_console, c
 
 
 def main():
-
+    
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'PvZ_Fusion_Translator'))
     clear_console()
     print("=== PVZ Fuzion Consol Manager ===")

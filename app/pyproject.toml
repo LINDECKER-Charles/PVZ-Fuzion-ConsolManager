@@ -1,7 +1,7 @@
 [project]
 name = "python_console"
 version = "0.1.0"
-description = "Une console Python pour gérer rapports, parsers et outils de santé projet."
+description = "Une console Python pour gérer rapports de PVZFuzion, parsers et outils de santé projet."
 authors = [
     { name = "Charles Lindecker", email = "charles.lindecker@outlook.fr" }
 ]
