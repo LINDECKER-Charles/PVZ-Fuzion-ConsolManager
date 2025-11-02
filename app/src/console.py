@@ -71,4 +71,6 @@ def main():
             case _:
                 print("This feature is under development.")
                 press_enter_to_continue()
-    
+
+if __name__ == "__main__":
+    main()

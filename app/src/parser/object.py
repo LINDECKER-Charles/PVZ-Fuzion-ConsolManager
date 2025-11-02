@@ -26,9 +26,6 @@ class Achievement(Entity):
     def __init__(self, id: int, name: str, introduce: str):
         super().__init__(id, name, introduce)
 
-
-
-
 class EntryPath:
     def __init__(self, root: str, location: str):
         self.root = root

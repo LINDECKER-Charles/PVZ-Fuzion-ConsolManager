@@ -1,13 +1,8 @@
-import os
-import json
-from parser.object import EntryPath, compare_lists, get_plants, get_zombies, get_achievements
-from typing import List, TypeVar
-from parser.parser import get_all_localization
-
-T = TypeVar('T')
+from parser.object import EntryPath, compare_lists, get_plants, get_zombies, get_achievements, Plant, Zombie, Achievement
+from typing import List
 
 
-def compare_json_plant(root: str, location_a: str, location_b: str) -> List[T]:
+def compare_json_plant(root: str, location_a: str, location_b: str) -> List[Plant]:
 
     # Build paths of the two locations
     location_a = EntryPath(root, location_a)
@@ -20,7 +15,7 @@ def compare_json_plant(root: str, location_a: str, location_b: str) -> List[T]:
     # Compare and merge the two lists
     return compare_lists(a_data, b_data)
 
-def compare_json_zombie(root: str, location_a: str, location_b: str) -> List[T]:
+def compare_json_zombie(root: str, location_a: str, location_b: str) -> List[Zombie]:
 
     # Build paths of the two locations
     location_a = EntryPath(root, location_a)
@@ -33,7 +28,7 @@ def compare_json_zombie(root: str, location_a: str, location_b: str) -> List[T]:
     # Compare and merge the two lists
     return compare_lists(a_data, b_data)
 
-def compare_json_achievement(root: str, location_a: str, location_b: str) -> List[T]:
+def compare_json_achievement(root: str, location_a: str, location_b: str) -> List[Achievement]:
 
     # Build paths of the two locations
     location_a = EntryPath(root, location_a)
@@ -45,14 +40,3 @@ def compare_json_achievement(root: str, location_a: str, location_b: str) -> Lis
 
     # Compare and merge the two lists
     return compare_lists(a_data, b_data)
-
-if __name__ == '__main__':
-    root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'PvZ_Fusion_Translator'))
-    location_a = 'English'
-
-    for localization in get_all_localization(os.path.join(root, 'Localization')):
-        merged_data = compare_json_plant(root, location_a, localization)
-        print(f"Length of merged data for {localization}: {len(merged_data)}")
-
-    print("--- Merged Data ---")
-    """ print(get_entity_dict(merged_data)) """
