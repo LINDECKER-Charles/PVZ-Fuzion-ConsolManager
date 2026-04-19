@@ -1,0 +1,24 @@
+[project]
+name = "pvz-console"
+version = "0.2.0"
+description = "Translation toolkit for Plants vs Zombies: Fusion — reports, migrations and Trello exports."
+authors = [
+    { name = "Charles Lindecker", email = "charles.lindecker@outlook.fr" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+build = ["pyinstaller"]
+
+[project.scripts]
+pvz-console = "pvz_console.cli.app:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pvz_console*"]
