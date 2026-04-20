@@ -101,28 +101,33 @@ def _string_cards(entries: Sequence[StringEntry], list_name: str, label: str) ->
     return cards
 
 
-def collect_cards(root: str, locale: str, label: str = DEFAULT_LABEL) -> List[TrelloCard]:
+def collect_cards(
+    root: str,
+    locale: str,
+    label: str = DEFAULT_LABEL,
+    source: str = SOURCE_LOCALE,
+) -> List[TrelloCard]:
     cards: List[TrelloCard] = []
 
     cards += _almanac_cards(
-        missing_by_id(load_plants(root, SOURCE_LOCALE), load_plants(root, locale)),
+        missing_by_id(load_plants(root, source), load_plants(root, locale)),
         LIST_PLANTS, label,
     )
     cards += _almanac_cards(
-        missing_by_id(load_zombies(root, SOURCE_LOCALE), load_zombies(root, locale)),
+        missing_by_id(load_zombies(root, source), load_zombies(root, locale)),
         LIST_ZOMBIES, label,
     )
     cards += _almanac_cards(
-        missing_by_id(load_achievements(root, SOURCE_LOCALE), load_achievements(root, locale)),
+        missing_by_id(load_achievements(root, source), load_achievements(root, locale)),
         LIST_ACHIEVEMENTS, label,
     )
 
-    cards += _string_cards(diff_strings(root, SOURCE_LOCALE, locale), LIST_STRINGS, label)
-    cards += _string_cards(diff_regexs(root, SOURCE_LOCALE, locale), LIST_REGEX, label)
-    cards += _string_cards(diff_tips_iz(root, SOURCE_LOCALE, locale), LIST_TIPS_IZ, label)
-    cards += _string_cards(diff_tips_fs(root, SOURCE_LOCALE, locale), LIST_TIPS_FS, label)
-    cards += _string_cards(diff_abyss_buffs(root, SOURCE_LOCALE, locale), LIST_ABYSS, label)
-    cards += _string_cards(diff_travel_buffs(root, SOURCE_LOCALE, locale), LIST_TRAVEL, label)
+    cards += _string_cards(diff_strings(root, source, locale), LIST_STRINGS, label)
+    cards += _string_cards(diff_regexs(root, source, locale), LIST_REGEX, label)
+    cards += _string_cards(diff_tips_iz(root, source, locale), LIST_TIPS_IZ, label)
+    cards += _string_cards(diff_tips_fs(root, source, locale), LIST_TIPS_FS, label)
+    cards += _string_cards(diff_abyss_buffs(root, source, locale), LIST_ABYSS, label)
+    cards += _string_cards(diff_travel_buffs(root, source, locale), LIST_TRAVEL, label)
 
     return cards
 
@@ -132,12 +137,13 @@ def export_trello(
     exports_root: os.PathLike | str,
     root: os.PathLike | str = PROJECT_ROOT,
     label: str = DEFAULT_LABEL,
+    source: str = SOURCE_LOCALE,
 ) -> TrelloExportResult:
     root_str = str(root)
     out = Path(exports_root) / locale
     out.mkdir(parents=True, exist_ok=True)
 
-    cards = collect_cards(root_str, locale, label=label)
+    cards = collect_cards(root_str, locale, label=label, source=source)
     counts: Dict[str, int] = {}
     for card in cards:
         counts[card.list_name] = counts.get(card.list_name, 0) + 1

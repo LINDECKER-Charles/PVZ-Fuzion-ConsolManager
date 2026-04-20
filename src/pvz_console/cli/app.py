@@ -6,7 +6,7 @@ import sys
 from dataclasses import dataclass
 from typing import Callable, List, Optional
 
-from pvz_console.parsers.loaders import list_localizations
+from pvz_console.parsers.loaders import DUMPS_SOURCE, list_localizations
 
 # Force UTF-8 on Windows consoles so emojis and translated strings
 # don't crash the program via cp1252.
@@ -338,6 +338,7 @@ def _tool_trello_export() -> None:
         EXPORTS_ROOT,
         root=_project_root_str(),
         label=_SETTINGS.trello_label,
+        source=_source_locale(),
     )
 
     print()
@@ -386,7 +387,10 @@ def _show_current_settings() -> None:
     root_status = s.validate_project_root()
     root_badge = "\u2705 valid" if root_status is None else f"\u274c {root_status}"
     print(f"    Project root     : {s.resolved_project_root()}  ({root_badge})")
-    print(f"    Source locale    : {s.source_locale}")
+    src_status = s.validate_source_locale() if root_status is None else None
+    src_badge = "\u2705 valid" if src_status is None else f"\u274c {src_status}"
+    src_suffix = "" if root_status is not None else f"  ({src_badge})"
+    print(f"    Source locale    : {s.source_locale}{src_suffix}")
     print(f"    Text color       : {s.color}")
     print(f"    Accent color     : {s.accent_color}")
     print(f"    Density          : {s.density}")
@@ -411,6 +415,28 @@ def _edit_project_root() -> None:
         return
     save_settings(_SETTINGS)
     success("Project root updated.")
+    press_enter_to_continue()
+
+
+def _edit_source_locale() -> None:
+    if not _require_valid_project_root():
+        return
+    clear_console()
+    section("Change source locale")
+    info("The source locale is the reference used to detect missing translations.")
+    info(f"Pick '{DUMPS_SOURCE}' to diff every locale against the raw game dumps.")
+    choices = [DUMPS_SOURCE] + list_localizations(_project_root_str())
+    choice = ask_choice_from_list("Source locale", choices, _SETTINGS.source_locale)
+    previous = _SETTINGS.source_locale
+    _SETTINGS.source_locale = choice
+    err = _SETTINGS.validate_source_locale()
+    if err is not None:
+        error(err)
+        _SETTINGS.source_locale = previous
+        press_enter_to_continue()
+        return
+    save_settings(_SETTINGS)
+    success(f"Source locale set to '{choice}'.")
     press_enter_to_continue()
 
 
@@ -456,12 +482,13 @@ def _edit_trello_label() -> None:
 def _settings_menu() -> None:
     options = [
         MenuOption("1", "Change PvZ_Fusion_Translator folder"),
-        MenuOption("2", "Change text color"),
-        MenuOption("3", "Change accent color"),
-        MenuOption("4", "Change spacing density"),
-        MenuOption("5", "Toggle emoji"),
-        MenuOption("6", "Toggle ASCII banner"),
-        MenuOption("7", "Change Trello label text"),
+        MenuOption("2", "Change source locale (reference)"),
+        MenuOption("3", "Change text color"),
+        MenuOption("4", "Change accent color"),
+        MenuOption("5", "Change spacing density"),
+        MenuOption("6", "Toggle emoji"),
+        MenuOption("7", "Toggle ASCII banner"),
+        MenuOption("8", "Change Trello label text"),
         MenuOption("9", "Reset to defaults"),
         MenuOption("0", "Back"),
     ]
@@ -474,16 +501,18 @@ def _settings_menu() -> None:
             case 1:
                 _edit_project_root()
             case 2:
-                _edit_color("color", "Text color")
+                _edit_source_locale()
             case 3:
-                _edit_color("accent_color", "Accent color")
+                _edit_color("color", "Text color")
             case 4:
-                _edit_density()
+                _edit_color("accent_color", "Accent color")
             case 5:
-                _toggle("show_emoji")
+                _edit_density()
             case 6:
-                _toggle("show_banner")
+                _toggle("show_emoji")
             case 7:
+                _toggle("show_banner")
+            case 8:
                 _edit_trello_label()
             case 9:
                 _reset_settings()
@@ -566,6 +595,11 @@ def _run_interactive() -> None:
     if err is not None:
         warn(err)
         info("Fix it via [3] Settings \u2192 Change PvZ_Fusion_Translator folder.")
+    else:
+        src_err = _SETTINGS.validate_source_locale()
+        if src_err is not None:
+            warn(src_err)
+            info("Fix it via [3] Settings \u2192 Change source locale.")
 
     while True:
         choice = _main_menu()

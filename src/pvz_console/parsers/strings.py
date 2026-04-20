@@ -4,7 +4,11 @@ import os
 from typing import Any, Dict, List
 
 from pvz_console.core.models import StringEntry
-from pvz_console.parsers.loaders import load_json, strings_dir
+from pvz_console.parsers.loaders import (
+    load_json,
+    source_strings_path,
+    strings_dir,
+)
 
 STRINGS_FILE = "translation_strings.json"
 REGEXS_FILE = "translation_regexs.json"
@@ -48,13 +52,13 @@ def _diff(source: Dict[str, str], target: Dict[str, str]) -> List[StringEntry]:
 
 
 def diff_file(root: str, source_locale: str, target_locale: str, filename: str) -> List[StringEntry]:
-    src = _load_flat(os.path.join(strings_dir(root, source_locale), filename))
+    src = _load_flat(source_strings_path(root, source_locale, filename))
     tgt = _load_flat(os.path.join(strings_dir(root, target_locale), filename))
     return _diff(src, tgt)
 
 
 def diff_nested_file(root: str, source_locale: str, target_locale: str, filename: str) -> List[StringEntry]:
-    src_raw = load_json(os.path.join(strings_dir(root, source_locale), filename)) or {}
+    src_raw = load_json(source_strings_path(root, source_locale, filename)) or {}
     tgt_raw = load_json(os.path.join(strings_dir(root, target_locale), filename)) or {}
     return _diff(_flatten_nested(src_raw), _flatten_nested(tgt_raw))
 

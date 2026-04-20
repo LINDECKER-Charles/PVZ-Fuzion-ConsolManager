@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from pvz_console import config
+from pvz_console.parsers.loaders import DUMPS_DIRNAME, DUMPS_SOURCE, is_dumps_source
 
 SETTINGS_FILENAME = "settings.json"
 
@@ -40,6 +41,24 @@ class AppSettings:
             return f"Directory does not exist: {p}"
         if not (p / "Localization").is_dir():
             return f"Missing 'Localization' subfolder in {p}"
+        return None
+
+    def uses_dumps_source(self) -> bool:
+        return is_dumps_source(self.source_locale)
+
+    def validate_source_locale(self) -> Optional[str]:
+        """Verify the configured source exists under the project root.
+
+        Dumps mode requires a ``Dumps/`` folder; a locale source requires
+        ``Localization/<locale>/``.
+        """
+        p = self.resolved_project_root()
+        if self.uses_dumps_source():
+            if not (p / DUMPS_DIRNAME).is_dir():
+                return f"Missing '{DUMPS_DIRNAME}' subfolder in {p}"
+            return None
+        if not (p / "Localization" / self.source_locale).is_dir():
+            return f"Source locale folder not found: Localization/{self.source_locale}"
         return None
 
 
