@@ -44,7 +44,7 @@ jobs:
 
       - name: Upload coverage XML artifact
         if: matrix.python-version == '3.12'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-xml
           path: coverage.xml
@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload JS coverage report
         if: matrix.node-version == '22'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: js-coverage-lcov
           path: coverage/lcov.info
