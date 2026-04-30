@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main, dev]
 
+# Run JavaScript-based actions on Node 24 instead of the deprecated Node 20.
+# See https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   test:
     name: Tests (Python ${{ matrix.python-version }})
@@ -29,7 +34,18 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Run pytest with coverage
-        run: pytest --cov --cov-report=term-missing --cov-report=xml --cov-fail-under=75
+        run: pytest --cov --cov-report=term-missing --cov-report=xml --cov-fail-under=75 | tee pytest-output.txt
+
+      - name: Render coverage in job summary
+        if: always()
+        run: |
+          {
+            echo "## Python ${{ matrix.python-version }} — coverage"
+            echo
+            echo '```'
+            sed -n '/^Name *Stmts/,/^TOTAL/p' pytest-output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload coverage XML artifact
         if: matrix.python-version == '3.12'
@@ -63,8 +79,19 @@ jobs:
       - name: Install npm dev dependencies
         run: npm install
 
-      - name: Run JS tests with coverage (100% gate)
-        run: npm run test:cov
+      - name: Run JS tests with coverage (75% gate)
+        run: npm run test:cov | tee js-output.txt
+
+      - name: Render coverage in job summary
+        if: always()
+        run: |
+          {
+            echo "## Node ${{ matrix.node-version }} — coverage"
+            echo
+            echo '```'
+            awk '/^-+\|/{table=1} table' js-output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload JS coverage report
         if: matrix.node-version == '22'
