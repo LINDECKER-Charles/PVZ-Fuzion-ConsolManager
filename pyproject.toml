@@ -11,6 +11,7 @@ dependencies = []
 
 [project.optional-dependencies]
 build = ["pyinstaller"]
+dev = ["pytest>=7", "pytest-cov>=4"]
 
 [project.scripts]
 pvz-console = "pvz_console.cli.app:main"
@@ -22,3 +23,26 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["pvz_console*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+
+[tool.coverage.run]
+branch = true
+source = ["pvz_console"]
+omit = [
+    "src/pvz_console/__main__.py",
+    "src/pvz_console/cli/banner.py",
+    "src/pvz_console/cli/theme.py",
+    "src/pvz_console/cli/menus.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
