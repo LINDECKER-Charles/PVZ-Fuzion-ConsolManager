@@ -58,6 +58,16 @@ from pvz_console.parsers.strings import (
     diff_travel_buffs,
     strings_file_exists,
 )
+from pvz_console.reporting.diff_json import (
+    build_abyss_buffs_diff,
+    build_achievements_diff,
+    build_plants_diff,
+    build_regexs_diff,
+    build_strings_diff,
+    build_tips_diff,
+    build_travel_buffs_diff,
+    build_zombies_diff,
+)
 from pvz_console.reporting.markdown import (
     build_abyss_buffs_report,
     build_achievement_report,
@@ -101,13 +111,13 @@ def _source_locale() -> str:
 @dataclass(frozen=True)
 class TranslationType:
     label: str
-    run: Callable[[List[str]], int]
+    run: Callable[[List[str], bool], int]
 
 
 _REPORTS_ROOT_STR = str(REPORTS_ROOT)
 
 
-def _run_plants(locales: List[str]) -> int:
+def _run_plants(locales: List[str], with_diff: bool = False) -> int:
     src = load_plants(_project_root_str(), _source_locale())
     total = 0
     for loc in locales:
@@ -116,10 +126,12 @@ def _run_plants(locales: List[str]) -> int:
         missing = missing_by_id(src, load_plants(_project_root_str(), loc))
         total += len(missing)
         build_plant_report(missing, loc, _REPORTS_ROOT_STR)
+        if with_diff:
+            build_plants_diff(missing, loc, _REPORTS_ROOT_STR)
     return total
 
 
-def _run_zombies(locales: List[str]) -> int:
+def _run_zombies(locales: List[str], with_diff: bool = False) -> int:
     src = load_zombies(_project_root_str(), _source_locale())
     total = 0
     for loc in locales:
@@ -128,10 +140,12 @@ def _run_zombies(locales: List[str]) -> int:
         missing = missing_by_id(src, load_zombies(_project_root_str(), loc))
         total += len(missing)
         build_zombie_report(missing, loc, _REPORTS_ROOT_STR)
+        if with_diff:
+            build_zombies_diff(missing, loc, _REPORTS_ROOT_STR)
     return total
 
 
-def _run_achievements(locales: List[str]) -> int:
+def _run_achievements(locales: List[str], with_diff: bool = False) -> int:
     src = load_achievements(_project_root_str(), _source_locale())
     total = 0
     for loc in locales:
@@ -140,10 +154,12 @@ def _run_achievements(locales: List[str]) -> int:
         missing = missing_by_id(src, load_achievements(_project_root_str(), loc))
         total += len(missing)
         build_achievement_report(missing, loc, _REPORTS_ROOT_STR)
+        if with_diff:
+            build_achievements_diff(missing, loc, _REPORTS_ROOT_STR)
     return total
 
 
-def _run_strings(locales: List[str]) -> int:
+def _run_strings(locales: List[str], with_diff: bool = False) -> int:
     total = 0
     for loc in locales:
         if loc == _source_locale():
@@ -151,10 +167,12 @@ def _run_strings(locales: List[str]) -> int:
         entries = diff_strings(_project_root_str(), _source_locale(), loc)
         total += len(entries)
         build_strings_report(entries, loc, _REPORTS_ROOT_STR)
+        if with_diff:
+            build_strings_diff(entries, loc, _REPORTS_ROOT_STR)
     return total
 
 
-def _run_regexs(locales: List[str]) -> int:
+def _run_regexs(locales: List[str], with_diff: bool = False) -> int:
     total = 0
     for loc in locales:
         if loc == _source_locale():
@@ -162,10 +180,12 @@ def _run_regexs(locales: List[str]) -> int:
         entries = diff_regexs(_project_root_str(), _source_locale(), loc)
         total += len(entries)
         build_regexs_report(entries, loc, _REPORTS_ROOT_STR)
+        if with_diff:
+            build_regexs_diff(entries, loc, _REPORTS_ROOT_STR)
     return total
 
 
-def _run_tips(locales: List[str]) -> int:
+def _run_tips(locales: List[str], with_diff: bool = False) -> int:
     total = 0
     for loc in locales:
         if loc == _source_locale():
@@ -174,6 +194,8 @@ def _run_tips(locales: List[str]) -> int:
             entries = diff_tips_iz(_project_root_str(), _source_locale(), loc)
             total += len(entries)
             build_tips_report(entries, loc, _REPORTS_ROOT_STR, kind="iz")
+            if with_diff:
+                build_tips_diff(entries, loc, _REPORTS_ROOT_STR, kind="iz")
         else:
             warn(f"{loc}: {TIPS_IZ_FILE} missing \u2014 run Translator Tools > Migrate tips")
 
@@ -181,12 +203,14 @@ def _run_tips(locales: List[str]) -> int:
             entries = diff_tips_fs(_project_root_str(), _source_locale(), loc)
             total += len(entries)
             build_tips_report(entries, loc, _REPORTS_ROOT_STR, kind="fs")
+            if with_diff:
+                build_tips_diff(entries, loc, _REPORTS_ROOT_STR, kind="fs")
         else:
             warn(f"{loc}: {TIPS_FS_FILE} missing \u2014 run Translator Tools > Migrate tips")
     return total
 
 
-def _run_abyss_buffs(locales: List[str]) -> int:
+def _run_abyss_buffs(locales: List[str], with_diff: bool = False) -> int:
     total = 0
     for loc in locales:
         if loc == _source_locale():
@@ -197,10 +221,12 @@ def _run_abyss_buffs(locales: List[str]) -> int:
         entries = diff_abyss_buffs(_project_root_str(), _source_locale(), loc)
         total += len(entries)
         build_abyss_buffs_report(entries, loc, _REPORTS_ROOT_STR)
+        if with_diff:
+            build_abyss_buffs_diff(entries, loc, _REPORTS_ROOT_STR)
     return total
 
 
-def _run_travel_buffs(locales: List[str]) -> int:
+def _run_travel_buffs(locales: List[str], with_diff: bool = False) -> int:
     total = 0
     for loc in locales:
         if loc == _source_locale():
@@ -211,6 +237,8 @@ def _run_travel_buffs(locales: List[str]) -> int:
         entries = diff_travel_buffs(_project_root_str(), _source_locale(), loc)
         total += len(entries)
         build_travel_buffs_report(entries, loc, _REPORTS_ROOT_STR)
+        if with_diff:
+            build_travel_buffs_diff(entries, loc, _REPORTS_ROOT_STR)
     return total
 
 
@@ -230,8 +258,8 @@ def _as_list(choice) -> List[str]:
     return choice if isinstance(choice, list) else [choice]
 
 
-def _run_all(locales: List[str]) -> int:
-    return sum(t.run(locales) for t in TRANSLATION_TYPES.values())
+def _run_all(locales: List[str], with_diff: bool = False) -> int:
+    return sum(t.run(locales, with_diff) for t in TRANSLATION_TYPES.values())
 
 
 def _require_valid_project_root() -> bool:
@@ -248,6 +276,14 @@ def _require_valid_project_root() -> bool:
     return False
 
 
+def _ask_yes_no(label: str, default: bool = False) -> bool:
+    suffix = "Y/n" if default else "y/N"
+    raw = ask_text(f"{label} ({suffix})", default="").strip().lower()
+    if not raw:
+        return default
+    return raw in ("y", "yes", "o", "oui")
+
+
 def _show_missing() -> None:
     if not _require_valid_project_root():
         return
@@ -260,23 +296,29 @@ def _show_missing() -> None:
         MenuOption(str(k), t.label) for k, t in TRANSLATION_TYPES.items()
     ]
     choice = ask_choice("Select translation type", options, default=-1)
+
+    if choice != 0 and choice not in TRANSLATION_TYPES:
+        clear_console()
+        error("Invalid choice.")
+        press_enter_to_continue()
+        return
+
+    with_diff = _ask_yes_no("Also export JSON diff files alongside reports?", default=False)
     clear_console()
 
     locales = _as_list(localiz)
     if choice == 0:
         info("Type: All")
-        count = _run_all(locales)
-    elif choice in TRANSLATION_TYPES:
+        count = _run_all(locales, with_diff)
+    else:
         trans = TRANSLATION_TYPES[choice]
         info(f"Type: {trans.label}")
-        count = trans.run(locales)
-    else:
-        error("Invalid choice.")
-        press_enter_to_continue()
-        return
+        count = trans.run(locales, with_diff)
 
     print()
     success(f"Total missing entries found: {count}")
+    if with_diff:
+        info("JSON diff files written next to the markdown reports.")
     press_enter_to_continue()
 
 
@@ -612,11 +654,13 @@ def _parse_cli_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
                       help="Target locale name (e.g. French, German).")
     diff.add_argument("--out", default=None, metavar="DIR",
                       help="Output directory (default: ./reports).")
+    diff.add_argument("--with-diff", action="store_true",
+                      help="Also write JSON diff files (one per type) next to the reports.")
 
     return parser.parse_args(argv)
 
 
-def _cmd_diff(lang: str, out: Optional[str]) -> int:
+def _cmd_diff(lang: str, out: Optional[str], with_diff: bool = False) -> int:
     global _REPORTS_ROOT_STR
 
     err = _SETTINGS.validate_project_root()
@@ -637,7 +681,7 @@ def _cmd_diff(lang: str, out: Optional[str]) -> int:
         _REPORTS_ROOT_STR = out
 
     print(f"pvzf-console: diff {lang} \u2192 {_REPORTS_ROOT_STR}/{lang}/")
-    count = _run_all([lang])
+    count = _run_all([lang], with_diff)
     print(f"pvzf-console: {count} missing entries")
     return 0
 
@@ -682,7 +726,7 @@ def main() -> None:
 
     args = _parse_cli_args()
     if args.command == "diff":
-        sys.exit(_cmd_diff(args.lang, args.out))
+        sys.exit(_cmd_diff(args.lang, args.out, args.with_diff))
 
     _run_interactive()
 
