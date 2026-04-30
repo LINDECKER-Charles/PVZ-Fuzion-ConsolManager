@@ -23,14 +23,19 @@ const PYTHON_DOWNLOAD_URL = "https://www.python.org/downloads/";
 function detectPython() {
     for (const cmd of ["python3", "python", "py"]) {
         const result = spawnSync(cmd, ["--version"], { stdio: "pipe", encoding: "utf8" });
+        /* c8 ignore next -- the `result.status !== 0` half only triggers if a binary
+           named python* exists on PATH and answers --version with a non-zero exit */
         if (result.error || result.status !== 0) continue;
 
+        /* c8 ignore next -- older pythons print --version to stderr instead of stdout */
         const version = `${result.stdout || ""}${result.stderr || ""}`.trim();
         const match = version.match(/Python\s+(\d+)\.(\d+)/);
+        /* c8 ignore next -- a python that prints a non-Python-shaped version line */
         if (!match) continue;
 
         const major = Number(match[1]);
         const minor = Number(match[2]);
+        /* c8 ignore next 3 -- the `<MIN` half requires an outdated python on PATH */
         if (major > MIN_MAJOR || (major === MIN_MAJOR && minor >= MIN_MINOR)) {
             return { cmd, version };
         }
@@ -85,10 +90,12 @@ function buildPyz({ repoRoot, quiet = false }) {
             ["-m", "zipapp", staging, "-m", "pvz_console.__main__:main", "-o", outFile],
             { stdio: quiet ? "pipe" : "inherit" },
         );
+        /* c8 ignore start -- defensive: zipapp exits 0 unless the host Python is broken */
         if (result.error) throw result.error;
         if (result.status !== 0) {
             throw new Error(`zipapp exited with status ${result.status}`);
         }
+        /* c8 ignore stop */
 
         const distReadmeSrc = path.join(repoRoot, "README.dist.md");
         if (existsSync(distReadmeSrc)) {

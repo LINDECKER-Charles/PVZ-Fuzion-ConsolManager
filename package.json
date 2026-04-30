@@ -1,6 +1,6 @@
 {
   "name": "@charles_lindecker/pvzf-console",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Translation toolkit for Plants vs Zombies: Fusion. Scans localization files, generates per-locale reports, and exports Trello CSVs.",
   "keywords": [
     "pvz",
@@ -25,11 +25,16 @@
     "README.dist.md"
   ],
   "engines": {
-    "node": ">=14"
+    "node": ">=20"
   },
   "scripts": {
     "build": "node bin/build.js",
-    "prepublishOnly": "node bin/build.js"
+    "prepublishOnly": "node bin/build.js",
+    "test": "node --test tests-js/build.test.js tests-js/pvzf-console.test.js",
+    "test:cov": "c8 --reporter=text --reporter=lcov --include=bin/*.js --lines=75 --functions=75 --branches=75 --statements=75 node --test tests-js/build.test.js tests-js/pvzf-console.test.js"
+  },
+  "devDependencies": {
+    "c8": "^10.1.2"
   },
   "repository": {
     "type": "git",
