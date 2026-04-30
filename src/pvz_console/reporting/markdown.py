@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Optional, Sequence
 
 from pvz_console.core.models import Achievement, AlmanacEntry, Plant, StringEntry, Zombie
+from pvz_console.tools.duplicate_checker import LocaleDuplicates
 
 
 @dataclass(frozen=True)
@@ -147,3 +148,49 @@ def build_abyss_buffs_report(entries: Sequence[StringEntry], localization: str, 
 def build_travel_buffs_report(entries: Sequence[StringEntry], localization: str, reports_root: os.PathLike | str) -> None:
     _write_flat_report("\U0001f9f3", "Missing Travel Buff Translations", "missing_travel_buffs.md",
                        entries, localization, reports_root)
+
+
+# ---------- duplicates report --------------------------------------------------
+
+def build_duplicates_report(result: LocaleDuplicates, reports_root: os.PathLike | str) -> Optional[str]:
+    """Write ``duplicates.md`` for ``result``. Returns the path, or ``None``
+    when the locale is clean (no duplicates found in any scanned file).
+    """
+    if not result.has_any:
+        return None
+    out_path = os.path.join(_locale_dir(reports_root, result.locale), "duplicates.md")
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("# \U0001f501 Duplicate translations\n\n")
+        f.write(f"> **Localization:** `{result.locale.upper()}`  \n")
+        f.write(
+            f"> **Duplicate keys:** `{result.total_duplicate_keys}` \u2014 "
+            f"**Repeated values:** `{result.total_duplicate_values}`  \n"
+        )
+        f.write("> **Generated automatically by PVZ Fuzion Console Manager** \U0001f9e9\n\n")
+        f.write("---\n\n")
+
+        for fd in result.files:
+            if not fd.has_any:
+                continue
+            f.write(f"## `{fd.filename}`\n\n")
+
+            if fd.duplicate_keys:
+                f.write(f"### \u274c Duplicate keys ({len(fd.duplicate_keys)})\n\n")
+                f.write("| Key | Occurrences |\n| --- | --- |\n")
+                for key, count in fd.duplicate_keys:
+                    f.write(f"| `{_md_cell(key)}` | {count} |\n")
+                f.write("\n")
+
+            if fd.duplicate_values:
+                f.write(f"### \U0001f501 Repeated values ({len(fd.duplicate_values)})\n\n")
+                f.write("| Value | Keys sharing it |\n| --- | --- |\n")
+                for value, keys in fd.duplicate_values:
+                    keys_cell = ", ".join(f"`{k}`" for k in keys)
+                    f.write(f"| {_md_cell(value)} | {_md_cell(keys_cell)} |\n")
+                f.write("\n")
+
+            f.write("---\n\n")
+
+    print(f"\u2705 Report generated: {out_path}")
+    return out_path

@@ -61,6 +61,7 @@ from pvz_console.parsers.strings import (
 from pvz_console.reporting.markdown import (
     build_abyss_buffs_report,
     build_achievement_report,
+    build_duplicates_report,
     build_plant_report,
     build_regexs_report,
     build_strings_report,
@@ -68,6 +69,7 @@ from pvz_console.reporting.markdown import (
     build_travel_buffs_report,
     build_zombie_report,
 )
+from pvz_console.tools.duplicate_checker import LocaleDuplicates, check_locale_duplicates
 from pvz_console.tools.tips_migration import MigrationResult, migrate_tips
 from pvz_console.tools.trello_export import export_trello
 
@@ -357,10 +359,63 @@ def _tool_trello_export() -> None:
     press_enter_to_continue()
 
 
+def _print_duplicates_result(result: LocaleDuplicates, report_path: Optional[str]) -> None:
+    print()
+    info(f"\u2728 {result.locale}")
+    if not result.has_any:
+        success("  No duplicates found.")
+        return
+    success(
+        f"  {result.total_duplicate_keys} duplicate key(s), "
+        f"{result.total_duplicate_values} repeated value group(s)."
+    )
+    for fd in result.files:
+        if not fd.has_any:
+            continue
+        info(
+            f"  \u2022 {fd.filename}: "
+            f"{len(fd.duplicate_keys)} dup key(s), "
+            f"{len(fd.duplicate_values)} repeated value(s)"
+        )
+    if report_path:
+        info(f"  Report: {report_path}")
+
+
+def _tool_duplicate_checker() -> None:
+    if not _require_valid_project_root():
+        return
+    clear_console()
+    section("Check duplicates")
+    info("Scans translation files for duplicate keys and values shared by multiple keys.")
+    info("Generates a 'duplicates.md' report for any locale that has matches.")
+
+    localiz = select_localization(_project_root_str())
+    clear_console()
+    locales = _as_list(localiz)
+    info(f"Localization: {localiz if not isinstance(localiz, list) else 'All (' + str(len(localiz)) + ')'}")
+
+    total_dup_keys = 0
+    total_dup_values = 0
+    for loc in locales:
+        result = check_locale_duplicates(_project_root_str(), loc)
+        report_path = build_duplicates_report(result, _REPORTS_ROOT_STR)
+        _print_duplicates_result(result, report_path)
+        total_dup_keys += result.total_duplicate_keys
+        total_dup_values += result.total_duplicate_values
+
+    print()
+    success(
+        f"Total: {total_dup_keys} duplicate key(s), "
+        f"{total_dup_values} repeated value group(s)."
+    )
+    press_enter_to_continue()
+
+
 def _translator_tools() -> None:
     options = [
         MenuOption("1", "Migrate tips \u2014 translation_strings.json \u2192 tips_iz/tips_fs"),
         MenuOption("2", "Export Trello CSV \u2014 missing translations for a locale"),
+        MenuOption("3", "Check duplicates \u2014 duplicate keys & repeated values"),
         MenuOption("0", "Back"),
     ]
     while True:
@@ -372,6 +427,8 @@ def _translator_tools() -> None:
                 _tool_tips_migration()
             case 2:
                 _tool_trello_export()
+            case 3:
+                _tool_duplicate_checker()
             case 0:
                 return
             case _:
