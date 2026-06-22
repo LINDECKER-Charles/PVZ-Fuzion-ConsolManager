@@ -1,2 +1,0 @@
-[console_scripts]
-pvz-console = pvz_console.cli.app:main
