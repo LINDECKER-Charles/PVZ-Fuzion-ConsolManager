@@ -353,6 +353,7 @@ class JsonScanner {
   }
 
   private parseNumber(): void {
+    // eslint-disable-next-line security/detect-unsafe-regex -- false positive: JSON-number grammar with disjoint, non-overlapping quantifier groups; no catastrophic backtracking.
     const re = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
     re.lastIndex = this.i;
     const m = re.exec(this.s);

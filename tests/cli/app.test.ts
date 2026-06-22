@@ -125,9 +125,7 @@ describe("cmdDiff", () => {
   let project: TempProject;
   let app: App;
   let reports: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let outSpy: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let errSpy: any;
 
   beforeEach(() => {
@@ -256,9 +254,7 @@ describe("parseCliArgs", () => {
 
 describe("main", () => {
   let project: TempProject;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let outSpy: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let errSpy: any;
 
   beforeEach(() => {

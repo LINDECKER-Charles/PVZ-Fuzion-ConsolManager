@@ -13,9 +13,9 @@ export interface AlmanacEntry {
   raw: Record<string, unknown>;
 }
 
-export interface Plant extends AlmanacEntry {}
-export interface Zombie extends AlmanacEntry {}
-export interface Achievement extends AlmanacEntry {}
+export type Plant = AlmanacEntry;
+export type Zombie = AlmanacEntry;
+export type Achievement = AlmanacEntry;
 
 export type StringStatus = "missing" | "empty";
 
