@@ -1,0 +1,20 @@
+version: 2
+updates:
+  # npm dependencies (dev-only — the package ships with zero runtime deps).
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      npm-dev:
+        patterns:
+          - "*"
+        dependency-type: "development"
+
+  # Keep GitHub Actions pinned versions fresh and patched.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
