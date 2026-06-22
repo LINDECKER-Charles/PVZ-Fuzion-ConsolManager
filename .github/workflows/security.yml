@@ -23,7 +23,7 @@ jobs:
     name: npm audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Set up Node
         uses: actions/setup-node@v5
@@ -47,7 +47,7 @@ jobs:
     name: eslint (security ruleset)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Set up Node
         uses: actions/setup-node@v5
@@ -67,7 +67,7 @@ jobs:
     container:
       image: semgrep/semgrep:latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Semgrep scan
         run: semgrep scan --config=.semgrep.yml --config=p/typescript --config=p/nodejs --error
@@ -76,7 +76,7 @@ jobs:
     name: gitleaks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
