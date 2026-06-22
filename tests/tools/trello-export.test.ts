@@ -1,0 +1,47 @@
+import { existsSync, mkdtempSync, rmSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import { exportTrello } from "../../src/tools/trello-export";
+import { createTempProject, type TempProject } from "../helpers";
+
+let project: TempProject;
+let exportsDir: string;
+
+beforeEach(() => {
+  project = createTempProject();
+  exportsDir = mkdtempSync(path.join(tmpdir(), "pvzf-exp-"));
+});
+
+afterEach(() => {
+  project.cleanup();
+  rmSync(exportsDir, { recursive: true, force: true });
+});
+
+function isFile(p: string): boolean {
+  return existsSync(p) && statSync(p).isFile();
+}
+
+describe("exportTrello", () => {
+  it("writes CSVs and a README", () => {
+    project.makeLocale("English", { strings: { "translation_strings.json": { k1: "Hello" } } });
+    project.makeLocale("French");
+    const out = exportTrello("French", exportsDir, project.root, "lbl", "English");
+    expect(isFile(out.readmePath)).toBe(true);
+    expect(out.totalCards).toBeGreaterThanOrEqual(1);
+    expect(Object.keys(out.csvPaths).length).toBeGreaterThan(0);
+    for (const p of Object.values(out.csvPaths)) {
+      expect(isFile(p)).toBe(true);
+    }
+  });
+
+  it("handles a fully translated locale", () => {
+    project.makeLocale("English", { strings: { "translation_strings.json": { k: "v" } } });
+    project.makeLocale("French", { strings: { "translation_strings.json": { k: "v-fr" } } });
+    const out = exportTrello("French", exportsDir, project.root, "lbl", "English");
+    expect(out.totalCards).toBe(0);
+    expect(out.csvPaths).toEqual({});
+    expect(isFile(out.readmePath)).toBe(true);
+  });
+});
