@@ -1,0 +1,72 @@
+name: Promote
+
+# Promote dev -> main automatically, but only once BOTH the CI and Security
+# workflows have completed successfully for the very same commit.
+#
+# Prerequisites (one-time, in the repo settings):
+#   - This file must exist on the default branch (main) to be active —
+#     bootstrap with a first manual merge of dev into main.
+#   - main's branch protection must allow the github-actions bot to push
+#     (or relax "require a pull request"); otherwise the push is rejected.
+
+on:
+  workflow_run:
+    workflows: [CI, Security]
+    types: [completed]
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: promote-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: promote dev -> main
+    runs-on: ubuntu-latest
+    # Only consider a successful push on dev; ignore PRs, schedules, other branches.
+    if: >
+      github.event.workflow_run.head_branch == 'dev' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Require CI and Security both green for this commit
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          all_ok=true
+          for wf in ci.yml security.yml; do
+            concl=$(gh api \
+              "repos/$REPO/actions/workflows/$wf/runs?head_sha=$SHA&event=push&branch=dev&per_page=1" \
+              --jq '.workflow_runs | map(select(.status == "completed")) | (.[0].conclusion // "pending")')
+            echo "$wf -> $concl"
+            if [ "$concl" != "success" ]; then all_ok=false; fi
+          done
+          echo "ok=$all_ok" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout main
+        if: steps.gate.outputs.ok == 'true'
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Fast-forward main to the validated dev commit
+        if: steps.gate.outputs.ok == 'true'
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Fast-forward only: refuse (no force, no merge commit) if main has
+          # diverged from dev — a human resolves that case deliberately.
+          git merge --ff-only "$SHA"
+          git push origin main
