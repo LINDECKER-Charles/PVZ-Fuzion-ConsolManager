@@ -5,32 +5,33 @@ It scans every locale in `PvZ_Fusion_Translator/` against the English source
 and tells you exactly **what's still missing**, then generates ready-to-use
 Markdown reports and Trello CSVs.
 
-This archive is everything you need — no install, no dependencies.
+No runtime dependencies — just Node.
 
 ---
 
 ## 🚀 First run in 30 seconds
 
-1. Make sure **Python 3.10 or newer** is installed.
-   Download: [python.org/downloads](https://www.python.org/downloads/).
-2. Drop `pvzf_console.pyz` next to your `PvZ_Fusion_Translator/` folder,
-   so your working directory looks like this:
+1. Make sure **Node.js 20 or newer** is installed.
+   Download: [nodejs.org](https://nodejs.org/).
+2. Install (or run) the tool, then open a terminal **next to** your
+   `PvZ_Fusion_Translator/` folder so your working directory looks like this:
 
    ```
    some-folder/
-   ├── pvzf_console.pyz
    └── PvZ_Fusion_Translator/
        ├── Localization/
        ├── Dumps/
        └── …
    ```
-3. Open a terminal in `some-folder/` and run:
+3. Run:
 
    ```bash
-   python pvzf_console.pyz
+   npx @charles_lindecker/pvzf-console
    ```
 
-   That's it — the interactive menu opens.
+   That's it — the interactive menu opens. (Install it globally with
+   `npm install -g @charles_lindecker/pvzf-console` to get the `pvzf-console`
+   command directly.)
 
 > Not at the same level? No problem. Launch it anywhere, then go to
 > **[3] Settings → Change PvZ_Fusion_Translator folder** and paste the
@@ -69,7 +70,8 @@ Pick a locale (or `*` for all), then pick what to check:
 
 You get one Markdown report per type under **`reports/<Locale>/`**. Each
 report shows the exact JSON block to copy/translate/paste into the locale
-file.
+file. The tool also offers to write `*_diff.json` files alongside the reports —
+say yes if you want the missing entries in re-injectable JSON form.
 
 ### [2] Translator tools
 
@@ -101,15 +103,19 @@ the source files.
 Follow the generated `trello_README.md` for the one-time board setup
 (labels, lists, the Blue Cat plugin).
 
+**Check duplicates** — scans every string file for duplicate JSON keys and for
+values reused across multiple keys. Any locale with matches gets a
+`duplicates.md` report under `reports/<Locale>/`.
+
 ### [3] Settings
 
 Everything here is optional — defaults are sensible. Changes are saved to
-`settings.json` next to the archive.
+`settings.json`.
 
 | Setting         | Default            | Notes                                          |
 | --------------- | ------------------ | ---------------------------------------------- |
 | Project folder  | sibling folder     | Absolute path to `PvZ_Fusion_Translator/`      |
-| Source locale   | `English`          | The reference used for diffs                   |
+| Source locale   | `English`          | The reference used for diffs (`Dumps` for raw dumps) |
 | Text color      | `default`          | Color of ordinary text                         |
 | Accent color    | `cyan`             | Color of headers, prompts, option keys         |
 | Spacing density | `comfortable`      | `compact` · `comfortable` · `spacious`         |
@@ -124,8 +130,9 @@ Everything here is optional — defaults are sensible. Changes are saved to
 Skip the menus and run a single locale from the command line:
 
 ```bash
-python pvzf_console.pyz diff --lang French
-python pvzf_console.pyz diff --lang German --out ./out/german
+pvzf-console diff --lang French
+pvzf-console diff --lang German --out ./out/german
+pvzf-console diff --lang French --with-diff      # also write *_diff.json
 ```
 
 - Exits `0` on success.
@@ -137,17 +144,17 @@ Use it from batch scripts or CI to flag regressions automatically.
 
 ## 🛟 Troubleshooting
 
-**"Python 3.10+ not found on PATH"**
-Install Python from [python.org/downloads](https://www.python.org/downloads/).
-On Windows, tick *"Add Python to PATH"* in the installer.
+**"command not found: pvzf-console"**
+Install Node 20+ from [nodejs.org](https://nodejs.org/), then either
+`npm install -g @charles_lindecker/pvzf-console` or run it with `npx`.
 
 **"Directory does not exist: …"**
 The configured project folder is wrong. Open `[3] Settings` → *Change
 PvZ_Fusion_Translator folder* and paste the right absolute path.
 
 **The banner is a scrambled wall of `?` characters**
-Your terminal is not UTF-8. The tool forces UTF-8 on Windows consoles, but
-if that fails, go to `[3] Settings` → *Toggle ASCII banner* / *Toggle emoji*
+Your terminal isn't UTF-8 / VT100. The tool enables VT100 on Windows consoles,
+but if that fails, go to `[3] Settings` → *Toggle ASCII banner* / *Toggle emoji*
 for a plain-text fallback.
 
 **A generated CSV is huge**
@@ -157,11 +164,12 @@ a time using the Blue Cat plugin — the instructions in
 
 ---
 
-## 📦 What's in this archive
+## 📦 What's in this package
 
 - The translation-diff engine (plants, zombies, achievements, strings,
   regex, tips IZ / FS, abyss buffs, travel buffs).
 - The tips-migration tool.
+- The duplicate checker.
 - The Trello CSV exporter + import guide generator.
 - A configurable interactive TUI and a headless CLI.
 
