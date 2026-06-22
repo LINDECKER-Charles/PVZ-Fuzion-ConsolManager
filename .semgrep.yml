@@ -1,0 +1,20 @@
+# Custom Semgrep rules, layered on top of the p/typescript and p/nodejs packs.
+# Keep project-specific guards here; the registry packs cover the common cases.
+rules:
+  - id: no-eval-with-expression
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: >
+      Avoid eval() with a dynamic expression — arbitrary code execution risk.
+    pattern: eval(...)
+
+  - id: no-child-process-shell-concat
+    languages: [typescript, javascript]
+    severity: WARNING
+    message: >
+      Building a shell command from concatenated input invites command
+      injection. Prefer passing args as an array to spawn/execFile.
+    patterns:
+      - pattern-either:
+          - pattern: child_process.exec("..." + ...)
+          - pattern: child_process.execSync("..." + ...)

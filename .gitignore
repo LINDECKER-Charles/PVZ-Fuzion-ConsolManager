@@ -1,24 +1,18 @@
 PvZ_Fusion_Translator/
 .idea/
-.venv/
-venv/
-build/
+.vscode/
+
+node_modules/
 dist/
-*.egg-info/
-__pycache__/
-*.pyc
+*.tsbuildinfo
 
 reports/
 exports/
-dist/
-*.pyz
 settings.json
-.coverage
 coverage/
-coverage.xml
-htmlcov/
+docs
+graphify-out
 
-node_modules/
 npm-debug.log*
 yarn-error.log*
 

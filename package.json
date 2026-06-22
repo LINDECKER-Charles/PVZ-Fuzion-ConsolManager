@@ -1,6 +1,6 @@
 {
   "name": "@charles_lindecker/pvzf-console",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Translation toolkit for Plants vs Zombies: Fusion. Scans localization files, generates per-locale reports, and exports Trello CSVs.",
   "keywords": [
     "pvz",
@@ -13,13 +13,12 @@
   ],
   "author": "Charles Lindecker <charles.lindecker@outlook.fr>",
   "license": "MIT",
+  "type": "module",
   "bin": {
-    "pvzf-console": "bin/pvzf-console.js"
+    "pvzf-console": "dist/cli.js"
   },
   "files": [
-    "bin/",
     "dist/",
-    "src/",
     "data/",
     "README.md",
     "README.dist.md"
@@ -28,13 +27,27 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node bin/build.js",
-    "prepublishOnly": "node bin/build.js",
-    "test": "node --test tests-js/build.test.js tests-js/pvzf-console.test.js",
-    "test:cov": "c8 --reporter=text --reporter=lcov --include=bin/*.js --lines=75 --functions=75 --branches=75 --statements=75 node --test tests-js/build.test.js tests-js/pvzf-console.test.js"
+    "build": "tsup",
+    "prepublishOnly": "tsup",
+    "dev": "tsx src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:security": "eslint . --max-warnings=0",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage"
   },
   "devDependencies": {
-    "c8": "^10.1.2"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "eslint": "^10.5.0",
+    "eslint-plugin-security": "^4.0.1",
+    "globals": "^17.7.0",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.61.1",
+    "vitest": "^2.1.8"
   },
   "repository": {
     "type": "git",

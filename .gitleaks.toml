@@ -1,0 +1,13 @@
+title = "pvzf-console gitleaks config"
+
+# Build on the bundled default ruleset (API keys, tokens, private keys, …).
+[extend]
+useDefault = true
+
+# The game data folder holds only localization JSON — never secrets.
+[allowlist]
+description = "Paths with no secret material"
+paths = [
+  '''PvZ_Fusion_Translator/.*''',
+  '''package-lock\.json''',
+]

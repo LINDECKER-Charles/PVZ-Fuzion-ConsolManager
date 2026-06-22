@@ -1,0 +1,40 @@
+version: 2
+updates:
+  # npm dependencies (the package ships with zero runtime deps; these are dev only).
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    groups:
+      typescript:
+        patterns:
+          - "typescript"
+          - "@types/*"
+          - "typescript-eslint"
+          - "@typescript-eslint/*"
+      eslint:
+        patterns:
+          - "eslint"
+          - "eslint-*"
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+      build-tooling:
+        patterns:
+          - "tsup"
+          - "tsx"
+      dev-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
+    labels: [dependencies, security]
+
+  # Keep GitHub Actions pinned versions fresh and patched.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: [ci, security]
