@@ -209,6 +209,32 @@ describe("migrateTipsAndBuffs", () => {
     expect(written).not.toHaveProperty("empty");
   });
 
+  it("travel: migrates name and desc in the current format", () => {
+    project = createTempProject();
+    project.makeLocale("French", {
+      strings: {
+        "translation_strings.json": {
+          "Chinese name": "Nom",
+          "Chinese description": "Description",
+        },
+      },
+    });
+    project.makeDump(TRAVEL_BUFFS_FILE, {
+      advancedBuffs: {
+        "0": { name: "Chinese name", desc: "Chinese description" },
+        "1": { name: "Untranslated name", desc: "" },
+      },
+    });
+
+    const result = migrateTipsAndBuffs(project.root, "French");
+    const fr = fileResult(result, TRAVEL_BUFFS_FILE);
+    expect(fr.available).toBe(3);
+    expect(fr.migrated).toBe(2);
+    expect(readGenerated(project.root, "French", TRAVEL_BUFFS_FILE)).toEqual({
+      advancedBuffs: { "0": { name: "Nom", desc: "Description" } },
+    });
+  });
+
   it("creates an empty {} file when nothing is translated (migrated 0, status created)", () => {
     project = createTempProject();
     project.makeLocale("French", {

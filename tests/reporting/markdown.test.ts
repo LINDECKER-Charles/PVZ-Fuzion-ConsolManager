@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import type { Plant, StringEntry } from "../../src/core/models";
+import type { Plant, StringEntry, TravelBuffEntry } from "../../src/core/models";
 import type { FileDuplicates, LocaleDuplicates } from "../../src/tools/duplicate-checker";
 import {
   buildAbyssBuffsReport,
@@ -86,15 +86,32 @@ describe("markdown flat reports", () => {
     expect(existsSync(path.join(tmpPath, "French", "missing_tips_iz.md"))).toBe(true);
   });
 
-  it("regex/abyss/travel reports create their files", () => {
+  it("regex and abyss reports create their files", () => {
     tmpPath = makeTmp();
     const entries: StringEntry[] = [{ key: "K", source: "V", target: null, status: "missing" }];
     buildRegexsReport(entries, "French", tmpPath);
     buildAbyssBuffsReport(entries, "French", tmpPath);
-    buildTravelBuffsReport(entries, "French", tmpPath);
     expect(existsSync(path.join(tmpPath, "French", "missing_regexs.md"))).toBe(true);
     expect(existsSync(path.join(tmpPath, "French", "missing_abyss_buffs.md"))).toBe(true);
+  });
+
+  it("travel report includes the complete missing buff", () => {
+    tmpPath = makeTmp();
+    const entries: TravelBuffEntry[] = [{
+      key: "advancedBuffs:0",
+      category: "advancedBuffs",
+      id: "0",
+      raw: { name: "Call to Arms", desc: "Buff description" },
+      source: "Call to Arms",
+      target: null,
+      status: "missing",
+    }];
+    buildTravelBuffsReport(entries, "French", tmpPath);
+    const body = read(path.join(tmpPath, "French", "missing_travel_buffs.md"));
     expect(existsSync(path.join(tmpPath, "French", "missing_travel_buffs.md"))).toBe(true);
+    expect(body).toContain("Call to Arms");
+    expect(body).toContain("Buff description");
+    expect(body).toContain("Missing IDs");
   });
 
   it("strings report with only empty entries omits missing section", () => {

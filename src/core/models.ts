@@ -27,6 +27,14 @@ export interface StringEntry {
   status: StringStatus;
 }
 
+/** A travel buff whose category/id pair is absent from the target locale. */
+export interface TravelBuffEntry extends StringEntry {
+  category: string;
+  id: string;
+  raw: unknown;
+  status: "missing";
+}
+
 export const DEFAULT_TRELLO_LABEL = "To be translated";
 
 export interface TrelloCard {

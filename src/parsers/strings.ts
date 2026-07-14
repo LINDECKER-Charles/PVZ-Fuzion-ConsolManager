@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-import type { StringEntry } from "../core/models";
+import type { StringEntry, TravelBuffEntry } from "../core/models";
 import { loadJson, sourceStringsPath, stringsDir } from "./loaders";
 
 export const STRINGS_FILE = "translation_strings.json";
@@ -32,18 +32,27 @@ function loadFlat(filePath: string): FlatDict {
 }
 
 /**
- * Flatten `{category: {id: value}}` to `{category:id: value}`.
+ * Flatten nested string leaves to colon-delimited paths.
  *
- * Top-level entries whose value isn't a dict are skipped — the game's
- * `travel_buffs.json` is strictly two levels deep.
+ * Supports legacy `{category: {id: value}}` data and the current
+ * `{category: {id: {name, desc}}}` format. Non-object top-level values are skipped.
  */
 export function flattenNested(data: Record<string, unknown>): Record<string, string> {
   const flat: Record<string, string> = {};
-  for (const [category, entries] of Object.entries(data)) {
-    if (!isRecord(entries)) continue;
-    for (const [key, value] of Object.entries(entries)) {
-      flat[`${category}:${key}`] = typeof value === "string" ? value : "";
+
+  function visit(node: Record<string, unknown>, path: string[]): void {
+    for (const [key, value] of Object.entries(node)) {
+      const leafPath = [...path, key];
+      if (isRecord(value)) {
+        visit(value, leafPath);
+      } else {
+        flat[leafPath.join(":")] = typeof value === "string" ? value : "";
+      }
     }
+  }
+
+  for (const [category, entries] of Object.entries(data)) {
+    if (isRecord(entries)) visit(entries, [category]);
   }
   return flat;
 }
@@ -109,8 +118,39 @@ export function diffAbyssBuffs(root: string, sourceLocale: string, targetLocale:
   return diffFile(root, sourceLocale, targetLocale, ABYSS_BUFFS_FILE);
 }
 
-export function diffTravelBuffs(root: string, sourceLocale: string, targetLocale: string): StringEntry[] {
-  return diffNestedFile(root, sourceLocale, targetLocale, TRAVEL_BUFFS_FILE);
+export function diffTravelBuffs(
+  root: string,
+  sourceLocale: string,
+  targetLocale: string,
+): TravelBuffEntry[] {
+  const srcRaw = loadJson(sourceStringsPath(root, sourceLocale, TRAVEL_BUFFS_FILE));
+  const tgtRaw = loadJson(path.join(stringsDir(root, targetLocale), TRAVEL_BUFFS_FILE));
+  const source = isRecord(srcRaw) ? srcRaw : {};
+  const target = isRecord(tgtRaw) ? tgtRaw : {};
+  const entries: TravelBuffEntry[] = [];
+
+  for (const [category, sourceGroup] of Object.entries(source)) {
+    if (!isRecord(sourceGroup)) continue;
+    const targetGroup = isRecord(target[category]) ? target[category] : {};
+    for (const [id, raw] of Object.entries(sourceGroup)) {
+      if (Object.hasOwn(targetGroup, id)) continue;
+      const name = isRecord(raw) && typeof raw.name === "string"
+        ? raw.name
+        : typeof raw === "string"
+          ? raw
+          : null;
+      entries.push({
+        key: `${category}:${id}`,
+        category,
+        id,
+        raw,
+        source: name,
+        target: null,
+        status: "missing",
+      });
+    }
+  }
+  return entries;
 }
 
 export function stringsFileExists(root: string, locale: string, filename: string): boolean {

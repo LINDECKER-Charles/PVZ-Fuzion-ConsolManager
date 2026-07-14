@@ -9,7 +9,10 @@ import {
   TIPS_FS_FILE,
   TIPS_IZ_FILE,
   TRAVEL_BUFFS_FILE,
+  flattenNested,
 } from "../parsers/strings";
+
+export { flattenNested };
 
 export const LAYOUT_FLAT = "flat";
 export const LAYOUT_NESTED = "nested";
@@ -116,17 +119,6 @@ export function detectValueDuplicates(data: Record<string, string>): Array<[stri
     return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0;
   });
   return out;
-}
-
-export function flattenNested(data: Record<string, unknown>): Record<string, string> {
-  const flat: Record<string, string> = {};
-  for (const [category, entries] of Object.entries(data)) {
-    if (!isRecord(entries)) continue;
-    for (const [key, value] of Object.entries(entries)) {
-      flat[`${category}:${key}`] = typeof value === "string" ? value : "";
-    }
-  }
-  return flat;
 }
 
 export function scanFile(filePath: string, layout: string): FileDuplicates {

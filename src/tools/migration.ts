@@ -102,16 +102,25 @@ function extractAbyss(filePath: string): SourceEntry[] | null {
   return entries;
 }
 
-/** `{ category: { key: chineseLeaf } }` → entry per leaf, dest nesting preserved. */
+/** Recursively extract travel-buff string leaves while preserving their paths. */
 function extractNested(filePath: string): SourceEntry[] | null {
   if (!existsSync(filePath)) return null;
   const entries: SourceEntry[] = [];
-  for (const [category, group] of Object.entries(loadObject(filePath))) {
-    if (!isObjectLike(group)) continue;
-    for (const [key, leaf] of Object.entries(group)) {
-      const text = asString(leaf);
-      if (text !== null && text.length > 0) entries.push({ path: [category, key], text });
+
+  function visit(node: Record<string, unknown>, currentPath: string[]): void {
+    for (const [key, value] of Object.entries(node)) {
+      const leafPath = [...currentPath, key];
+      if (isRecord(value)) {
+        visit(value, leafPath);
+        continue;
+      }
+      const text = asString(value);
+      if (text !== null && text.length > 0) entries.push({ path: leafPath, text });
     }
+  }
+
+  for (const [category, group] of Object.entries(loadObject(filePath))) {
+    if (isRecord(group)) visit(group, [category]);
   }
   return entries;
 }

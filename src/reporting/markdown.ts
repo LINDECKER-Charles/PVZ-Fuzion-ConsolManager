@@ -3,7 +3,14 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import type { Achievement, AlmanacEntry, Plant, StringEntry, Zombie } from "../core/models";
+import type {
+  Achievement,
+  AlmanacEntry,
+  Plant,
+  StringEntry,
+  TravelBuffEntry,
+  Zombie,
+} from "../core/models";
 import type { FileDuplicates, LocaleDuplicates } from "../tools/duplicate-checker";
 
 interface AlmanacSpec {
@@ -233,18 +240,29 @@ export function buildAbyssBuffsReport(
 }
 
 export function buildTravelBuffsReport(
-  entries: readonly StringEntry[],
+  entries: readonly TravelBuffEntry[],
   localization: string,
   reportsRoot: string,
 ): void {
-  writeFlatReport(
-    "\u{1f9f3}",
-    "Missing Travel Buff Translations",
-    "missing_travel_buffs.md",
-    entries,
-    localization,
-    reportsRoot,
-  );
+  if (entries.length === 0) return;
+
+  const outPath = path.join(localeDir(reportsRoot, localization), "missing_travel_buffs.md");
+  const data: Record<string, Record<string, unknown>> = {};
+  for (const entry of entries) {
+    if (!data[entry.category]) data[entry.category] = {};
+    data[entry.category][entry.id] = entry.raw;
+  }
+
+  let body = "# \u{1f9f3} Missing Travel Buff Translations\n\n";
+  body += `> **Localization:** \`${localization.toUpperCase()}\`  \n`;
+  body += `> **Missing IDs:** \`${entries.length}\`  \n`;
+  body += "> **Generated automatically by PVZ Fuzion Console Manager** \u{1f9e9}\n\n";
+  body += "---\n\n## \u274c Missing IDs\n\n```json\n";
+  body += jsonDumpsIndent2(data);
+  body += "\n```\n";
+
+  writeFileSync(outPath, body, { encoding: "utf-8" });
+  console.log(`\u2705 Report generated: ${outPath}`);
 }
 
 // ---------- duplicates report --------------------------------------------------

@@ -3,7 +3,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import type { AlmanacEntry, StringEntry } from "../core/models";
+import type { AlmanacEntry, StringEntry, TravelBuffEntry } from "../core/models";
 
 function localeDir(reportsRoot: string, localization: string): string {
   const dir = path.join(String(reportsRoot), localization);
@@ -122,13 +122,13 @@ export function buildAbyssBuffsDiff(
 // ---------- nested diff (travel buffs) ----------------------------------------
 
 /**
- * Restore the nested `{category: {key: source_value}}` shape.
+ * Restore the nested source shape from colon-delimited paths.
  *
- * `parsers.strings._flatten_nested` collapses keys to `category:key`; we split
- * on the first `:` to rebuild the original two-level dict.
+ * For example, `advancedBuffs:0:name` becomes
+ * `{ advancedBuffs: { "0": { name: sourceValue } } }`.
  */
 export function buildTravelBuffsDiff(
-  entries: readonly StringEntry[],
+  entries: readonly TravelBuffEntry[],
   localization: string,
   reportsRoot: string,
 ): string | null {
@@ -136,23 +136,10 @@ export function buildTravelBuffsDiff(
     return null;
   }
   const outPath = path.join(localeDir(reportsRoot, localization), "travel_buffs_diff.json");
-  const data: Record<string, Record<string, string>> = {};
+  const data: Record<string, Record<string, unknown>> = {};
   for (const e of entries) {
-    // Mirror Python's str.partition(":"): split on the FIRST ":" only.
-    const idx = e.key.indexOf(":");
-    let category: string;
-    let key: string;
-    if (idx === -1) {
-      category = "";
-      key = e.key;
-    } else {
-      category = e.key.slice(0, idx);
-      key = e.key.slice(idx + 1);
-    }
-    if (!(category in data)) {
-      data[category] = {};
-    }
-    data[category]![key] = e.source !== null ? e.source : "";
+    if (!data[e.category]) data[e.category] = {};
+    data[e.category][e.id] = e.raw;
   }
   return writeJsonFile(outPath, data);
 }

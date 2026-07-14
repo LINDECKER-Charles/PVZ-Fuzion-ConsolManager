@@ -20,6 +20,15 @@ describe("flattenNested", () => {
     expect(flattenNested({ cat: { a: "1", b: "2" } })).toEqual({ "cat:a": "1", "cat:b": "2" });
   });
 
+  it("collapses the current travel-buff format", () => {
+    expect(
+      flattenNested({ advancedBuffs: { "0": { name: "Call to Arms", desc: "Description" } } }),
+    ).toEqual({
+      "advancedBuffs:0:name": "Call to Arms",
+      "advancedBuffs:0:desc": "Description",
+    });
+  });
+
   it("skips non-dict top level", () => {
     expect(flattenNested({ cat: { a: "1" }, stray: "scalar" })).toEqual({ "cat:a": "1" });
   });
@@ -82,6 +91,39 @@ describe("travel buffs", () => {
     const entries = diffTravelBuffs(project.root, "English", "French");
     const keys = entries.map((e) => e.key).sort();
     expect(keys).toEqual(["catA:k2", "catB:k1"]);
+  });
+
+  it("compares IDs and preserves the complete current-format entry", () => {
+    project = createTempProject();
+    project.makeLocale("English", {
+      strings: {
+        "travel_buffs.json": {
+          advancedBuffs: {
+            "0": { name: "Call to Arms", desc: "Description 0" },
+            "1": { name: "Elite Corps", desc: "Description 1" },
+          },
+        },
+      },
+    });
+    project.makeLocale("French", {
+      strings: {
+        "travel_buffs.json": {
+          advancedBuffs: { "0": { name: "", desc: "Description FR" } },
+        },
+      },
+    });
+
+    expect(diffTravelBuffs(project.root, "English", "French")).toEqual([
+      {
+        key: "advancedBuffs:1",
+        category: "advancedBuffs",
+        id: "1",
+        raw: { name: "Elite Corps", desc: "Description 1" },
+        source: "Elite Corps",
+        target: null,
+        status: "missing",
+      },
+    ]);
   });
 });
 

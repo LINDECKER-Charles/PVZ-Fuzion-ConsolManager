@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import type { Plant, StringEntry } from "../../src/core/models";
+import type { Plant, StringEntry, TravelBuffEntry } from "../../src/core/models";
 import {
   buildAbyssBuffsDiff,
   buildAchievementsDiff,
@@ -82,22 +82,40 @@ describe("travel buffs diff", () => {
     expect(buildTravelBuffsDiff([], "French", tmpPath)).toBeNull();
   });
 
-  it("handles key without category", () => {
+  it("restores legacy entries", () => {
     const tmpPath = makeTmp();
-    const entries: StringEntry[] = [{ key: "orphan", source: "V", target: null, status: "missing" }];
-    const out = buildTravelBuffsDiff(entries, "French", tmpPath)!;
-    expect(readJson(out)).toEqual({ "": { orphan: "V" } });
-  });
-
-  it("restores two-level nesting", () => {
-    const tmpPath = makeTmp();
-    const entries: StringEntry[] = [
-      { key: "cat1:k1", source: "V1", target: null, status: "missing" },
-      { key: "cat1:k2", source: "V2", target: null, status: "missing" },
-      { key: "cat2:k1", source: "V3", target: null, status: "missing" },
+    const entries: TravelBuffEntry[] = [
+      {
+        key: "cat1:k1",
+        category: "cat1",
+        id: "k1",
+        raw: "V1",
+        source: "V1",
+        target: null,
+        status: "missing",
+      },
     ];
     const out = buildTravelBuffsDiff(entries, "French", tmpPath)!;
-    expect(readJson(out)).toEqual({ cat1: { k1: "V1", k2: "V2" }, cat2: { k1: "V3" } });
+    expect(readJson(out)).toEqual({ cat1: { k1: "V1" } });
+  });
+
+  it("preserves name and desc for current-format entries", () => {
+    const tmpPath = makeTmp();
+    const entries: TravelBuffEntry[] = [
+      {
+        key: "advancedBuffs:0",
+        category: "advancedBuffs",
+        id: "0",
+        raw: { name: "Call to Arms", desc: "Description" },
+        source: "Call to Arms",
+        target: null,
+        status: "missing",
+      },
+    ];
+    const out = buildTravelBuffsDiff(entries, "French", tmpPath)!;
+    expect(readJson(out)).toEqual({
+      advancedBuffs: { "0": { name: "Call to Arms", desc: "Description" } },
+    });
   });
 });
 

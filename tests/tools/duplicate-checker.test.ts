@@ -81,6 +81,13 @@ describe("flattenNested", () => {
     expect(flattenNested({ cat: { a: "1", b: "2" } })).toEqual({ "cat:a": "1", "cat:b": "2" });
   });
 
+  it("collapses the current three-level format", () => {
+    expect(flattenNested({ cat: { "0": { name: "V", desc: "V" } } })).toEqual({
+      "cat:0:name": "V",
+      "cat:0:desc": "V",
+    });
+  });
+
   it("skips non-dict top-level values", () => {
     expect(flattenNested({ cat: { a: "1" }, stray: "scalar" })).toEqual({ "cat:a": "1" });
   });

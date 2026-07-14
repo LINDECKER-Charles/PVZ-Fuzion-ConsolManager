@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { PROJECT_ROOT, SOURCE_LOCALE } from "../config";
 import { missingById } from "../core/diff";
-import type { AlmanacEntry, StringEntry, TrelloCard } from "../core/models";
+import type { AlmanacEntry, StringEntry, TravelBuffEntry, TrelloCard } from "../core/models";
 import { loadAchievements, loadPlants, loadZombies } from "../parsers/almanac";
 import {
   diffAbyssBuffs,
@@ -100,6 +100,18 @@ function stringCards(entries: ReadonlyArray<StringEntry>, listName: string, labe
   return cards;
 }
 
+function travelBuffCards(entries: ReadonlyArray<TravelBuffEntry>, label: string): TrelloCard[] {
+  return entries.map((entry) => ({
+    name: truncate(entry.source || entry.key, NAME_MAX_LEN),
+    description: truncate(
+      fence(JSON.stringify({ [entry.category]: { [entry.id]: entry.raw } }, null, 2)),
+      DESCRIPTION_MAX_LEN,
+    ),
+    listName: LIST_TRAVEL,
+    labels: label,
+  }));
+}
+
 export function collectCards(
   root: string,
   locale: string,
@@ -127,7 +139,7 @@ export function collectCards(
   cards.push(...stringCards(diffTipsIz(root, source, locale), LIST_TIPS_IZ, label));
   cards.push(...stringCards(diffTipsFs(root, source, locale), LIST_TIPS_FS, label));
   cards.push(...stringCards(diffAbyssBuffs(root, source, locale), LIST_ABYSS, label));
-  cards.push(...stringCards(diffTravelBuffs(root, source, locale), LIST_TRAVEL, label));
+  cards.push(...travelBuffCards(diffTravelBuffs(root, source, locale), label));
 
   return cards;
 }

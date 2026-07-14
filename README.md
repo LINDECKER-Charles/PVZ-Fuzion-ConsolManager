@@ -110,7 +110,7 @@ ships alongside it), so the global `bin` works straight after install.
 - Detects **empty values**: keys present in the locale but with an empty
   translation string — reported in a separate section of each report.
 - Handles both flat dicts (`translation_strings.json`, `abyss_buffs.json`, …)
-  and nested dicts (`travel_buffs.json` with `category:id` compound keys).
+  and nested travel buffs (`category:id`, preserving their full `name`/`desc` object).
 - Source of truth is configurable: diff against another locale (default
   `English`) **or** against the raw game `Dumps/` (`Dumps` source mode).
 - Gracefully logs malformed JSON and continues instead of crashing the run.
@@ -397,7 +397,7 @@ only requirement.
 | Emoji show up as `??` in your terminal            | `[3] Settings` → `[6] Toggle emoji` for the `[OK] / [!] / [X]` fallback.                         |
 | Banner ASCII art renders as mojibake              | `[3] Settings` → `[7] Toggle ASCII banner`. The tool enables VT100 on Windows but some legacy hosts still fail. |
 | Report file says 0 entries / no file at all       | 0 missing / empty-values is intentionally silent — the tool only writes a file when there's something to report. |
-| Travel-buffs keys look like `advancedBuffs:0`     | Expected — the nested `{category: {id: value}}` shape is flattened with `category:id` compound keys for diff/report. |
+| Travel-buffs keys look like `advancedBuffs:0`     | Expected: presence is checked by `category:id`; a missing ID keeps its complete `{name, desc}` object in the report. |
 
 ---
 
