@@ -12,12 +12,20 @@ concurrency:
 
 jobs:
   test:
-    name: test (node ${{ matrix.node }})
-    runs-on: ubuntu-latest
+    name: test (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest]
         node: ["20", "22"]
+        # Path handling and the per-user config directory differ per platform;
+        # one job each on macOS and Windows keeps them honest.
+        include:
+          - os: macos-latest
+            node: "22"
+          - os: windows-latest
+            node: "22"
     steps:
       - uses: actions/checkout@v5
 
