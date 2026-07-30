@@ -40,6 +40,7 @@ import {
   AppSettings,
   loadSettings,
   saveSettings,
+  settingsPath,
 } from "../settings";
 import { missingById } from "../core/diff";
 import { DUMPS_SOURCE, listLocalizations } from "../parsers/loaders";
@@ -106,9 +107,10 @@ type LocalizationChoice = string | string[];
  */
 export interface AppDeps {
   io: ConsoleIO;
-  /** Persist settings. Injectable so tests can intercept disk writes (the
-   * Python tests monkeypatched `save_settings`). */
-  saveSettings(settings: AppSettings): void;
+  /** Persist settings; returns `null` on success or a reason on failure.
+   * Injectable so tests can intercept disk writes (the Python tests
+   * monkeypatched `save_settings`). */
+  saveSettings(settings: AppSettings): string | null;
   renderTitle(candidates: readonly string[]): void;
   askChoice(title: string, options: readonly MenuOption[], defaultValue?: number): Promise<number>;
   askChoiceFromList(label: string, values: readonly string[], current: string): Promise<string>;
@@ -602,6 +604,19 @@ export class App {
 
   // ---------- Settings --------------------------------------------------------
 
+  /**
+   * Write the settings file, reporting a failure as a warning.
+   *
+   * The in-memory change stays applied either way: an unwritable config
+   * directory should cost the user persistence, not the running session.
+   */
+  persistSettings(): void {
+    const err = this.deps.saveSettings(this.settings);
+    if (err) {
+      this.deps.warn(`Settings could not be saved — ${err}`);
+    }
+  }
+
   showCurrentSettings(): void {
     this.deps.section("Current settings");
     const s = this.settings;
@@ -618,6 +633,7 @@ export class App {
     this.deps.io.write(`    Show emoji       : ${pyBool(s.showEmoji)}`);
     this.deps.io.write(`    Show banner      : ${pyBool(s.showBanner)}`);
     this.deps.io.write(`    Trello label     : ${s.trelloLabel}`);
+    this.deps.io.write(`    Settings file    : ${settingsPath()}`);
   }
 
   async editProjectRoot(): Promise<void> {
@@ -635,7 +651,7 @@ export class App {
       await this.deps.pressEnterToContinue();
       return;
     }
-    this.deps.saveSettings(this.settings);
+    this.persistSettings();
     this.deps.success("Project root updated.");
     await this.deps.pressEnterToContinue();
   }
@@ -663,7 +679,7 @@ export class App {
       await this.deps.pressEnterToContinue();
       return;
     }
-    this.deps.saveSettings(this.settings);
+    this.persistSettings();
     this.deps.success(`Source locale set to '${choice}'.`);
     await this.deps.pressEnterToContinue();
   }
@@ -673,7 +689,7 @@ export class App {
     const choice = await this.deps.askChoiceFromList(label, COLORS as readonly string[], current);
     this.settings[attr] = choice;
     this.applyTheme(this.settings);
-    this.deps.saveSettings(this.settings);
+    this.persistSettings();
   }
 
   async editDensity(): Promise<void> {
@@ -684,19 +700,19 @@ export class App {
     );
     this.settings.density = choice;
     this.applyTheme(this.settings);
-    this.deps.saveSettings(this.settings);
+    this.persistSettings();
   }
 
   toggle(attr: "showEmoji" | "showBanner"): void {
     this.settings[attr] = !this.settings[attr];
     this.applyTheme(this.settings);
-    this.deps.saveSettings(this.settings);
+    this.persistSettings();
   }
 
   resetSettings(): void {
     this.settings = new AppSettings();
     this.applyTheme(this.settings);
-    this.deps.saveSettings(this.settings);
+    this.persistSettings();
   }
 
   async editTrelloLabel(): Promise<void> {
@@ -705,7 +721,7 @@ export class App {
     this.deps.info(`Current: ${this.settings.trelloLabel}`);
     const newLabel = await this.deps.askText("New label", this.settings.trelloLabel);
     this.settings.trelloLabel = newLabel;
-    this.deps.saveSettings(this.settings);
+    this.persistSettings();
     this.deps.success("Label updated.");
     await this.deps.pressEnterToContinue();
   }

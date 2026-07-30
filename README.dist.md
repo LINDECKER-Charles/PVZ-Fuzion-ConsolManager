@@ -123,6 +123,19 @@ Everything here is optional — defaults are sensible. Changes are saved to
 | Show banner     | `true`             | ASCII title shown at launch                    |
 | Trello label    | `To be translated` | Label written on every exported card           |
 
+Your settings file lives in your own account, not in the installed package:
+
+| Platform    | Path                                                        |
+| ----------- | ----------------------------------------------------------- |
+| macOS       | `~/Library/Application Support/pvzf-console/settings.json`   |
+| Linux / BSD | `$XDG_CONFIG_HOME/pvzf-console/settings.json`, else `~/.config/pvzf-console/settings.json` |
+| Windows     | `%APPDATA%\pvzf-console\settings.json`                       |
+
+`[3] Settings` shows the exact path under *Settings file*. To keep it elsewhere,
+set `PVZF_CONSOLE_SETTINGS` to the full path you want. Coming from an older
+version that stored `settings.json` next to the program? It is picked up
+automatically on first launch — nothing to redo.
+
 ---
 
 ## ⚡ Power-user mode

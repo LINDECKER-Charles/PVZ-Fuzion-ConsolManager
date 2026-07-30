@@ -251,6 +251,28 @@ Answer yes to write `*_diff.json` next to each Markdown report.
 Supported ANSI colors: `default, red, green, yellow, blue, magenta, cyan,
 white` plus their `bright_*` variants.
 
+#### Where settings live
+
+`settings.json` is stored per user, outside the package, so a global install in
+a root-owned prefix (`/usr/local/lib/node_modules`, `C:\Program Files\nodejs`)
+stays writable:
+
+| Platform    | Path                                                        |
+| ----------- | ----------------------------------------------------------- |
+| macOS       | `~/Library/Application Support/pvzf-console/settings.json`   |
+| Linux / BSD | `$XDG_CONFIG_HOME/pvzf-console/settings.json`, else `~/.config/pvzf-console/settings.json` |
+| Windows     | `%APPDATA%\pvzf-console\settings.json`                       |
+
+`$XDG_CONFIG_HOME` is honored on macOS too when set to an absolute path. Set
+`PVZF_CONSOLE_SETTINGS=/path/to/settings.json` to pin the file somewhere else
+(portable installs, CI). The active path is shown in `[3] Settings` under
+*Settings file*.
+
+Upgrading from ≤ 1.4.1, which kept `settings.json` inside the package: that file
+is still read on first launch and copied to the per-user location on the next
+save. The old copy is left in place, so an older install alongside keeps working
+— but from then on the two no longer track each other.
+
 ---
 
 ## ⚡ Headless CLI
@@ -393,6 +415,7 @@ only requirement.
 | `Directory does not exist: …PvZ_Fusion_Translator` | Settings → `[1] Change PvZ_Fusion_Translator folder`, paste the correct absolute path.           |
 | `Missing 'Localization' subfolder in …`           | Same as above — the configured path exists but isn't the translator bundle.                      |
 | `<locale>: tips_iz.json missing`                  | Run Translator Tools → `[1] Migrate tips` for that locale first, then rerun the diff.             |
+| `Settings could not be saved — …`                 | The per-user config directory isn't writable. Fix its permissions, or point `PVZF_CONSOLE_SETTINGS` at a writable file. Settings still apply for the session. |
 | `Skipped tips_iz.json — N source string(s) missing` | Your `translation_strings.json` is still missing some source tip keys. Finish those first, then rerun the migration. |
 | Emoji show up as `??` in your terminal            | `[3] Settings` → `[6] Toggle emoji` for the `[OK] / [!] / [X]` fallback.                         |
 | Banner ASCII art renders as mojibake              | `[3] Settings` → `[7] Toggle ASCII banner`. The tool enables VT100 on Windows but some legacy hosts still fail. |

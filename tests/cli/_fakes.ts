@@ -63,7 +63,7 @@ export function fakeDeps(overrides: FakeDepsOverrides = {}): AppDeps {
   const io = overrides.io ?? new FakeIO();
   return {
     io,
-    saveSettings: overrides.saveSettings ?? (() => {}),
+    saveSettings: overrides.saveSettings ?? (() => null),
     renderTitle: overrides.renderTitle ?? (() => {}),
     askChoice:
       overrides.askChoice ??
