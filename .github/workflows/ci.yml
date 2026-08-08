@@ -38,6 +38,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint (style + CLAUDE.md size/complexity limits)
+        run: npm run lint
+
       - name: Typecheck
         run: npm run typecheck
 

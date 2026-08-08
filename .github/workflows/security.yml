@@ -34,8 +34,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Gate: the published package ships with zero runtime dependencies, so a
-      # high/critical advisory in production deps is a real, shippable risk.
+      # Gate: the published package ships two runtime dependencies
+      # (@clack/prompts, picocolors), so a high/critical advisory in production
+      # deps lands on end users' machines — treat it as blocking.
       - name: Audit production dependencies (fail on high/critical)
         run: npm audit --omit=dev --audit-level=high
 
