@@ -16,6 +16,13 @@ import { createTempProject, type TempProject } from "../helpers";
 
 let project: TempProject;
 
+const request = () => ({
+  root: project.root,
+  locale: "French",
+  label: "lbl",
+  source: "English",
+});
+
 beforeEach(() => {
   project = createTempProject();
 });
@@ -54,7 +61,7 @@ describe("collectCards card-building", () => {
     const longKey = "x".repeat(NAME_MAX_LEN + 50);
     project.makeLocale("English", { strings: { "translation_strings.json": { [longKey]: "Hi" } } });
     project.makeLocale("French");
-    const cards = collectCards(project.root, "French", "lbl", "English");
+    const cards = collectCards(request());
     const card = cards.find((c) => c.listName === LIST_STRINGS);
     expect(card).toBeDefined();
     expect(card!.name.length).toBeLessThanOrEqual(NAME_MAX_LEN);
@@ -64,7 +71,7 @@ describe("collectCards card-building", () => {
   it("falls back to id when the almanac name is missing", () => {
     project.makeLocale("English", { almanac: { [PLANTS_FILE]: { plants: [{ seedType: 42 }] } } });
     project.makeLocale("French");
-    const cards = collectCards(project.root, "French", "lbl", "English");
+    const cards = collectCards(request());
     const card = cards.find((c) => c.listName === LIST_PLANTS);
     expect(card?.name).toBe("id 42");
   });
@@ -75,7 +82,7 @@ describe("collectCards card-building", () => {
       strings: { "translation_strings.json": { k1: "Hello" } },
     });
     project.makeLocale("French");
-    const cards = collectCards(project.root, "French", "lbl", "English");
+    const cards = collectCards(request());
     expect(cards.some((c) => c.listName === LIST_PLANTS)).toBe(true);
     expect(cards.some((c) => c.listName === LIST_STRINGS)).toBe(true);
   });

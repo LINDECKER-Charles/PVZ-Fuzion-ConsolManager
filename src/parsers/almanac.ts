@@ -1,3 +1,4 @@
+import { isRecord } from "../core/guards";
 import type { Achievement, Id, Plant, Zombie } from "../core/models";
 import { loadJson, sourceAlmanacPath } from "./loaders";
 
@@ -6,10 +7,6 @@ export const ZOMBIES_FILE = "ZombieStringsTranslate.json";
 export const ACHIEVEMENTS_FILE = "AchievementsTextTranslate.json";
 
 type RawEntry = Record<string, unknown>;
-
-function isRecord(value: unknown): value is RawEntry {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 /** Mirrors Python's `dict.get` (absent → `None`). */
 function get(item: RawEntry, key: string): unknown {

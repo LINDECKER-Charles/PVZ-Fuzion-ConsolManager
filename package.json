@@ -1,7 +1,7 @@
 {
   "name": "@charles_lindecker/pvzf-console",
   "version": "1.5.0",
-  "description": "Translation toolkit for Plants vs Zombies: Fusion. Scans localization files, generates per-locale reports, and exports Trello CSVs.",
+  "description": "Translation toolkit for Plants vs Zombies: Fusion. Scans localization files, generates per-locale reports, exports Trello CSVs, and turns the weekly PR recap into contributor documentation.",
   "keywords": [
     "pvz",
     "plants-vs-zombies",
@@ -9,7 +9,10 @@
     "translation",
     "localization",
     "cli",
-    "trello"
+    "tui",
+    "trello",
+    "changelog",
+    "documentation"
   ],
   "author": "Charles Lindecker <charles.lindecker@outlook.fr>",
   "license": "MIT",
@@ -52,5 +55,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager.git"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.7.0",
+    "picocolors": "^1.1.1"
   }
 }

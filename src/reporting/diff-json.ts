@@ -1,40 +1,37 @@
-/** JSON diff generation — faithful port of `reporting/diff_json.py`. */
-
-import { mkdirSync, writeFileSync } from "node:fs";
-import path from "node:path";
+/** JSON diff files, written next to the Markdown reports. */
 
 import type { AlmanacEntry, StringEntry, TravelBuffEntry } from "../core/models";
+import { type LocaleTarget, formatJson, writeLocaleFile } from "./output";
 
-function localeDir(reportsRoot: string, localization: string): string {
-  const dir = path.join(String(reportsRoot), localization);
-  mkdirSync(dir, { recursive: true });
-  return dir;
+/** Which collection key an almanac diff nests its entries under. */
+interface AlmanacDiffSpec {
+  rootKey: string;
+  filename: string;
 }
 
-/**
- * Replicate `json.dump(data, f, ensure_ascii=False, indent=2)` followed by a
- * trailing `f.write("\n")`.
- */
-function writeJsonFile(outPath: string, data: unknown): string {
-  writeFileSync(outPath, JSON.stringify(data, null, 2) + "\n", { encoding: "utf-8" });
-  console.log(`✅ Diff generated: ${outPath}`);
-  return outPath;
+const PLANTS_SPEC: AlmanacDiffSpec = { rootKey: "plants", filename: "plants_diff.json" };
+const ZOMBIES_SPEC: AlmanacDiffSpec = { rootKey: "zombies", filename: "zombies_diff.json" };
+const ACHIEVEMENTS_SPEC: AlmanacDiffSpec = {
+  rootKey: "achievements",
+  filename: "achievements_diff.json",
+};
+
+/** `json.dump(..., indent=2)` writes no trailing newline; the Python port added one. */
+function writeJsonFile(target: LocaleTarget, filename: string, data: unknown): string {
+  return writeLocaleFile(target, filename, `${formatJson(data)}\n`);
 }
 
-// ---------- almanac diffs (plants, zombies, achievements) ---------------------
-
-function buildAlmanacDiff(
+function writeAlmanacDiff(
+  spec: AlmanacDiffSpec,
   entries: readonly AlmanacEntry[],
-  localization: string,
-  reportsRoot: string,
-  rootKey: string,
-  filename: string,
+  target: LocaleTarget,
 ): string | null {
   if (entries.length === 0) {
     return null;
   }
-  const outPath = path.join(localeDir(reportsRoot, localization), filename);
-  return writeJsonFile(outPath, { [rootKey]: entries.map((entry) => entry.raw) });
+  return writeJsonFile(target, spec.filename, {
+    [spec.rootKey]: entries.map((entry) => entry.raw),
+  });
 }
 
 export function buildPlantsDiff(
@@ -42,7 +39,7 @@ export function buildPlantsDiff(
   localization: string,
   reportsRoot: string,
 ): string | null {
-  return buildAlmanacDiff(plants, localization, reportsRoot, "plants", "plants_diff.json");
+  return writeAlmanacDiff(PLANTS_SPEC, plants, { localization, reportsRoot });
 }
 
 export function buildZombiesDiff(
@@ -50,7 +47,7 @@ export function buildZombiesDiff(
   localization: string,
   reportsRoot: string,
 ): string | null {
-  return buildAlmanacDiff(zombies, localization, reportsRoot, "zombies", "zombies_diff.json");
+  return writeAlmanacDiff(ZOMBIES_SPEC, zombies, { localization, reportsRoot });
 }
 
 export function buildAchievementsDiff(
@@ -58,32 +55,22 @@ export function buildAchievementsDiff(
   localization: string,
   reportsRoot: string,
 ): string | null {
-  return buildAlmanacDiff(
-    achievements,
-    localization,
-    reportsRoot,
-    "achievements",
-    "achievements_diff.json",
-  );
+  return writeAlmanacDiff(ACHIEVEMENTS_SPEC, achievements, { localization, reportsRoot });
 }
 
-// ---------- flat key/value diffs ----------------------------------------------
-
-function buildFlatDiff(
-  entries: readonly StringEntry[],
-  localization: string,
-  reportsRoot: string,
+function writeFlatDiff(
   filename: string,
+  entries: readonly StringEntry[],
+  target: LocaleTarget,
 ): string | null {
   if (entries.length === 0) {
     return null;
   }
-  const outPath = path.join(localeDir(reportsRoot, localization), filename);
   const data: Record<string, string> = {};
-  for (const e of entries) {
-    data[e.key] = e.source !== null ? e.source : "";
+  for (const entry of entries) {
+    data[entry.key] = entry.source ?? "";
   }
-  return writeJsonFile(outPath, data);
+  return writeJsonFile(target, filename, data);
 }
 
 export function buildStringsDiff(
@@ -91,7 +78,7 @@ export function buildStringsDiff(
   localization: string,
   reportsRoot: string,
 ): string | null {
-  return buildFlatDiff(entries, localization, reportsRoot, "strings_diff.json");
+  return writeFlatDiff("strings_diff.json", entries, { localization, reportsRoot });
 }
 
 export function buildRegexsDiff(
@@ -99,16 +86,23 @@ export function buildRegexsDiff(
   localization: string,
   reportsRoot: string,
 ): string | null {
-  return buildFlatDiff(entries, localization, reportsRoot, "regexs_diff.json");
+  return writeFlatDiff("regexs_diff.json", entries, { localization, reportsRoot });
 }
 
-export function buildTipsDiff(
+export function buildTipsIzDiff(
   entries: readonly StringEntry[],
   localization: string,
   reportsRoot: string,
-  kind: string,
 ): string | null {
-  return buildFlatDiff(entries, localization, reportsRoot, `tips_${kind}_diff.json`);
+  return writeFlatDiff("tips_iz_diff.json", entries, { localization, reportsRoot });
+}
+
+export function buildTipsFsDiff(
+  entries: readonly StringEntry[],
+  localization: string,
+  reportsRoot: string,
+): string | null {
+  return writeFlatDiff("tips_fs_diff.json", entries, { localization, reportsRoot });
 }
 
 export function buildAbyssBuffsDiff(
@@ -116,16 +110,13 @@ export function buildAbyssBuffsDiff(
   localization: string,
   reportsRoot: string,
 ): string | null {
-  return buildFlatDiff(entries, localization, reportsRoot, "abyss_buffs_diff.json");
+  return writeFlatDiff("abyss_buffs_diff.json", entries, { localization, reportsRoot });
 }
 
-// ---------- nested diff (travel buffs) ----------------------------------------
-
 /**
- * Restore the nested source shape from colon-delimited paths.
+ * Restore the nested source shape from the flattened entries.
  *
- * For example, `advancedBuffs:0:name` becomes
- * `{ advancedBuffs: { "0": { name: sourceValue } } }`.
+ * For example, `advancedBuffs:0` becomes `{ advancedBuffs: { "0": raw } }`.
  */
 export function buildTravelBuffsDiff(
   entries: readonly TravelBuffEntry[],
@@ -135,11 +126,10 @@ export function buildTravelBuffsDiff(
   if (entries.length === 0) {
     return null;
   }
-  const outPath = path.join(localeDir(reportsRoot, localization), "travel_buffs_diff.json");
   const data: Record<string, Record<string, unknown>> = {};
-  for (const e of entries) {
-    if (!data[e.category]) data[e.category] = {};
-    data[e.category][e.id] = e.raw;
+  for (const entry of entries) {
+    data[entry.category] ??= {};
+    data[entry.category][entry.id] = entry.raw;
   }
-  return writeJsonFile(outPath, data);
+  return writeJsonFile({ localization, reportsRoot }, "travel_buffs_diff.json", data);
 }

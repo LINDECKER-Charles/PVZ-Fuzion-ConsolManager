@@ -3,7 +3,14 @@ import path from "node:path";
 
 import { PROJECT_ROOT, SOURCE_LOCALE } from "../config";
 import { missingById } from "../core/diff";
-import type { AlmanacEntry, StringEntry, TravelBuffEntry, TrelloCard } from "../core/models";
+import {
+  DEFAULT_TRELLO_LABEL,
+  type AlmanacEntry,
+  type StringEntry,
+  type TravelBuffEntry,
+  type TrelloCard,
+} from "../core/models";
+import { stripTrailingWhitespace } from "../core/text";
 import { loadAchievements, loadPlants, loadZombies } from "../parsers/almanac";
 import {
   diffAbyssBuffs,
@@ -13,11 +20,14 @@ import {
   diffTipsIz,
   diffTravelBuffs,
 } from "../parsers/strings";
-import { buildTrelloReadme, writeTrelloCsvsByList } from "../reporting/trello-csv";
+import {
+  type TrelloListSummary,
+  buildTrelloReadme,
+  writeTrelloCsvsByList,
+} from "../reporting/trello-csv";
 
 export const NAME_MAX_LEN = 100;
 export const DESCRIPTION_MAX_LEN = 15000; // Trello hard limit is 16384; leave headroom.
-export const DEFAULT_LABEL = "To be translated";
 
 export const LIST_PLANTS = "Plants";
 export const LIST_ZOMBIES = "Zombies";
@@ -29,78 +39,80 @@ export const LIST_TIPS_FS = "Tips FS";
 export const LIST_ABYSS = "Abyss Buffs";
 export const LIST_TRAVEL = "Travel Buffs";
 
-/**
- * Port of the Python `TrelloExportResult` dataclass.
- *
- * The Python `@property total_cards` is materialised here as the data field
- * `totalCards` (sum of `countsByList` values), computed at construction.
- */
+const README_FILENAME = "trello_README.md";
+
+/** What to export, and against which reference. */
+export interface TrelloExportRequest {
+  /** Target locale — the one that still needs translating. */
+  locale: string;
+  /** `PvZ_Fusion_Translator/` root. Defaults to the discovered project root. */
+  root?: string;
+  /** Trello label stamped on every card. */
+  label?: string;
+  /** Reference locale the target is diffed against. */
+  source?: string;
+}
+
+export interface TrelloExportOptions extends TrelloExportRequest {
+  /** Folder receiving `<locale>/`, with the CSVs and the import README. */
+  exportsRoot: string;
+}
+
 export interface TrelloExportResult {
   locale: string;
   outputDir: string;
-  csvPaths: Record<string, string>;
   readmePath: string;
-  countsByList: Record<string, number>;
+  /** One entry per written CSV — empty when the locale is fully translated. */
+  lists: TrelloListSummary[];
   totalCards: number;
 }
 
 export function truncate(text: string, limit: number): string {
   if (text.length <= limit) return text;
-  // text[: limit - 1].rstrip() + "…"
-  return rstrip(text.slice(0, limit - 1)) + "…";
+  return `${stripTrailingWhitespace(text.slice(0, limit - 1))}…`;
 }
 
 function fence(body: string): string {
   return "```json\n" + body + "\n```";
 }
 
-/**
- * Wrap the raw dict (with braces) in a ```json fence — same shape as the source
- * file. `json.dumps(..., indent=2)` is matched by `JSON.stringify(..., null, 2)`;
- * `\n` inside string values stays literal, as Python's dumps escapes it.
- */
+/** Wrap the raw entry (braces included) in a ```json fence — same shape as the source file. */
 export function describeAlmanac(entry: AlmanacEntry): string {
   return fence(JSON.stringify(entry.raw, null, 2));
 }
 
-/**
- * Render a flat key/value entry as a JSON member inside a ```json fence:
- * `"key": "value"`. Matches how each line would appear in the source `.json`.
- */
+/** Render a flat key/value entry as the JSON member `"key": "value"`. */
 export function describeString(entry: StringEntry): string {
-  const key = JSON.stringify(entry.key);
-  const value = JSON.stringify(entry.source !== null && entry.source !== undefined ? entry.source : "");
-  return fence(`${key}: ${value}`);
+  return fence(`${JSON.stringify(entry.key)}: ${JSON.stringify(entry.source ?? "")}`);
 }
 
-function almanacCards(entries: ReadonlyArray<AlmanacEntry>, listName: string, label: string): TrelloCard[] {
-  const cards: TrelloCard[] = [];
-  for (const entry of entries) {
-    const name = entry.name || `id ${entry.id}`;
-    cards.push({
-      name: truncate(name, NAME_MAX_LEN),
-      description: truncate(describeAlmanac(entry), DESCRIPTION_MAX_LEN),
-      listName,
-      labels: label,
-    });
-  }
-  return cards;
+function almanacCards(
+  entries: readonly AlmanacEntry[],
+  listName: string,
+  label: string,
+): TrelloCard[] {
+  return entries.map((entry) => ({
+    name: truncate(entry.name || `id ${entry.id}`, NAME_MAX_LEN),
+    description: truncate(describeAlmanac(entry), DESCRIPTION_MAX_LEN),
+    listName,
+    labels: label,
+  }));
 }
 
-function stringCards(entries: ReadonlyArray<StringEntry>, listName: string, label: string): TrelloCard[] {
-  const cards: TrelloCard[] = [];
-  for (const entry of entries) {
-    cards.push({
-      name: truncate(entry.key, NAME_MAX_LEN),
-      description: truncate(describeString(entry), DESCRIPTION_MAX_LEN),
-      listName,
-      labels: label,
-    });
-  }
-  return cards;
+function stringCards(
+  entries: readonly StringEntry[],
+  listName: string,
+  label: string,
+): TrelloCard[] {
+  return entries.map((entry) => ({
+    name: truncate(entry.key, NAME_MAX_LEN),
+    description: truncate(describeString(entry), DESCRIPTION_MAX_LEN),
+    listName,
+    labels: label,
+  }));
 }
 
-function travelBuffCards(entries: ReadonlyArray<TravelBuffEntry>, label: string): TrelloCard[] {
+function travelBuffCards(entries: readonly TravelBuffEntry[], label: string): TrelloCard[] {
   return entries.map((entry) => ({
     name: truncate(entry.source || entry.key, NAME_MAX_LEN),
     description: truncate(
@@ -112,70 +124,72 @@ function travelBuffCards(entries: ReadonlyArray<TravelBuffEntry>, label: string)
   }));
 }
 
-export function collectCards(
-  root: string,
-  locale: string,
-  label: string = DEFAULT_LABEL,
-  source: string = SOURCE_LOCALE,
-): TrelloCard[] {
-  const cards: TrelloCard[] = [];
-
-  cards.push(
-    ...almanacCards(missingById(loadPlants(root, source), loadPlants(root, locale)), LIST_PLANTS, label),
-  );
-  cards.push(
-    ...almanacCards(missingById(loadZombies(root, source), loadZombies(root, locale)), LIST_ZOMBIES, label),
-  );
-  cards.push(
-    ...almanacCards(
-      missingById(loadAchievements(root, source), loadAchievements(root, locale)),
-      LIST_ACHIEVEMENTS,
-      label,
-    ),
-  );
-
-  cards.push(...stringCards(diffStrings(root, source, locale), LIST_STRINGS, label));
-  cards.push(...stringCards(diffRegexs(root, source, locale), LIST_REGEX, label));
-  cards.push(...stringCards(diffTipsIz(root, source, locale), LIST_TIPS_IZ, label));
-  cards.push(...stringCards(diffTipsFs(root, source, locale), LIST_TIPS_FS, label));
-  cards.push(...stringCards(diffAbyssBuffs(root, source, locale), LIST_ABYSS, label));
-  cards.push(...travelBuffCards(diffTravelBuffs(root, source, locale), label));
-
-  return cards;
+/** Resolved form of a {@link TrelloExportRequest}, defaults applied. */
+interface ResolvedRequest {
+  locale: string;
+  root: string;
+  label: string;
+  source: string;
 }
 
-export function exportTrello(
-  locale: string,
-  exportsRoot: string,
-  root: string = PROJECT_ROOT,
-  label: string = DEFAULT_LABEL,
-  source: string = SOURCE_LOCALE,
-): TrelloExportResult {
-  const rootStr = String(root);
-  const out = path.join(String(exportsRoot), locale);
-  mkdirSync(out, { recursive: true });
-
-  const cards = collectCards(rootStr, locale, label, source);
-  const counts: Record<string, number> = {};
-  for (const card of cards) {
-    counts[card.listName] = (counts[card.listName] ?? 0) + 1;
-  }
-
-  const csvPaths = writeTrelloCsvsByList(cards, out);
-  const readmePath = path.join(out, "trello_README.md");
-  buildTrelloReadme(locale, csvPaths, label, readmePath);
-
+function resolveRequest(request: TrelloExportRequest): ResolvedRequest {
   return {
-    locale,
-    outputDir: out,
-    csvPaths,
-    readmePath,
-    countsByList: counts,
-    totalCards: Object.values(counts).reduce((a, b) => a + b, 0),
+    locale: request.locale,
+    root: request.root ?? PROJECT_ROOT,
+    label: request.label ?? DEFAULT_TRELLO_LABEL,
+    source: request.source ?? SOURCE_LOCALE,
   };
 }
 
-/** Python `str.rstrip()` — strip trailing ASCII + Unicode whitespace. */
-function rstrip(text: string): string {
-  return text.replace(/\s+$/u, "");
+function almanacListCards({ root, locale, label, source }: ResolvedRequest): TrelloCard[] {
+  const missingPlants = missingById(loadPlants(root, source), loadPlants(root, locale));
+  const missingZombies = missingById(loadZombies(root, source), loadZombies(root, locale));
+  const missingAchievements = missingById(
+    loadAchievements(root, source),
+    loadAchievements(root, locale),
+  );
+  return [
+    ...almanacCards(missingPlants, LIST_PLANTS, label),
+    ...almanacCards(missingZombies, LIST_ZOMBIES, label),
+    ...almanacCards(missingAchievements, LIST_ACHIEVEMENTS, label),
+  ];
+}
+
+function stringListCards({ root, locale, label, source }: ResolvedRequest): TrelloCard[] {
+  return [
+    ...stringCards(diffStrings(root, source, locale), LIST_STRINGS, label),
+    ...stringCards(diffRegexs(root, source, locale), LIST_REGEX, label),
+    ...stringCards(diffTipsIz(root, source, locale), LIST_TIPS_IZ, label),
+    ...stringCards(diffTipsFs(root, source, locale), LIST_TIPS_FS, label),
+    ...stringCards(diffAbyssBuffs(root, source, locale), LIST_ABYSS, label),
+    ...travelBuffCards(diffTravelBuffs(root, source, locale), label),
+  ];
+}
+
+/** Every untranslated entry of `locale`, as Trello cards. */
+export function collectCards(request: TrelloExportRequest): TrelloCard[] {
+  const resolved = resolveRequest(request);
+  return [...almanacListCards(resolved), ...stringListCards(resolved)];
+}
+
+export function exportTrello(options: TrelloExportOptions): TrelloExportResult {
+  const resolved = resolveRequest(options);
+  const outputDir = path.join(options.exportsRoot, resolved.locale);
+  mkdirSync(outputDir, { recursive: true });
+
+  const lists = writeTrelloCsvsByList(collectCards(options), outputDir);
+  const readmePath = buildTrelloReadme({
+    locale: resolved.locale,
+    label: resolved.label,
+    outputPath: path.join(outputDir, README_FILENAME),
+    lists,
+  });
+
+  return {
+    locale: resolved.locale,
+    outputDir,
+    readmePath,
+    lists,
+    totalCards: lists.reduce((sum, list) => sum + list.cardCount, 0),
+  };
 }

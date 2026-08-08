@@ -8,7 +8,17 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "lcov"],
       include: ["src/**/*.ts"],
-      exclude: ["src/cli.ts", "src/cli/banner.ts", "src/cli/theme.ts", "src/cli/menus.ts"],
+      // Excluded: code that only exists to reach the real terminal.
+      // `cli.ts` is the shebang shim, `banner.ts`/`theme.ts` are pure
+      // presentation, `deps.ts` binds the screens to the process streams.
+      // `menus.ts` and `output.ts` are measured: they are driven for real
+      // against in-memory streams in `tests/cli/`.
+      exclude: [
+        "src/cli.ts",
+        "src/cli/banner.ts",
+        "src/cli/deps.ts",
+        "src/cli/theme.ts",
+      ],
       thresholds: {
         lines: 75,
         functions: 75,

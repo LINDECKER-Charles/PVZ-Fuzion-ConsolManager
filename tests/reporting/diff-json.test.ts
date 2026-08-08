@@ -10,7 +10,8 @@ import {
   buildPlantsDiff,
   buildRegexsDiff,
   buildStringsDiff,
-  buildTipsDiff,
+  buildTipsFsDiff,
+  buildTipsIzDiff,
   buildTravelBuffsDiff,
   buildZombiesDiff,
 } from "../../src/reporting/diff-json";
@@ -68,11 +69,11 @@ describe("flat string diffs", () => {
     );
   });
 
-  it("tips diff filename uses kind", () => {
+  it("each tips variant has its own filename", () => {
     const tmpPath = makeTmp();
     const entries: StringEntry[] = [{ key: "K", source: "V", target: null, status: "missing" }];
-    const out = buildTipsDiff(entries, "French", tmpPath, "iz")!;
-    expect(path.basename(out)).toBe("tips_iz_diff.json");
+    expect(path.basename(buildTipsIzDiff(entries, "French", tmpPath)!)).toBe("tips_iz_diff.json");
+    expect(path.basename(buildTipsFsDiff(entries, "French", tmpPath)!)).toBe("tips_fs_diff.json");
   });
 });
 

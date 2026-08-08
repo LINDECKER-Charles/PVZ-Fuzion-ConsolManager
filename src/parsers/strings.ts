@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 
+import { isRecord } from "../core/guards";
 import type { StringEntry, TravelBuffEntry } from "../core/models";
 import { loadJson, sourceStringsPath, stringsDir } from "./loaders";
 
@@ -11,10 +12,16 @@ export const TIPS_FS_FILE = "tips_fs.json";
 export const ABYSS_BUFFS_FILE = "abyss_buffs.json";
 export const TRAVEL_BUFFS_FILE = "travel_buffs.json";
 
+/** Separator joining nested keys into a flat path (`category:id:field`). */
+const KEY_SEPARATOR = ":";
+
 type FlatDict = Record<string, unknown>;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+/** The two locales a diff compares, plus the project they live in. */
+interface DiffScope {
+  root: string;
+  sourceLocale: string;
+  targetLocale: string;
 }
 
 /** Python truthiness for the values handled here (str / None / numbers). */
@@ -40,13 +47,13 @@ function loadFlat(filePath: string): FlatDict {
 export function flattenNested(data: Record<string, unknown>): Record<string, string> {
   const flat: Record<string, string> = {};
 
-  function visit(node: Record<string, unknown>, path: string[]): void {
+  function visit(node: Record<string, unknown>, keyPath: string[]): void {
     for (const [key, value] of Object.entries(node)) {
-      const leafPath = [...path, key];
+      const leafPath = [...keyPath, key];
       if (isRecord(value)) {
         visit(value, leafPath);
       } else {
-        flat[leafPath.join(":")] = typeof value === "string" ? value : "";
+        flat[leafPath.join(KEY_SEPARATOR)] = typeof value === "string" ? value : "";
       }
     }
   }
@@ -60,62 +67,81 @@ export function flattenNested(data: Record<string, unknown>): Record<string, str
 /** Keys present in `source` that are missing or empty in `target`. */
 function diff(source: FlatDict, target: FlatDict): StringEntry[] {
   const entries: StringEntry[] = [];
-  for (const [key, srcValue] of Object.entries(source)) {
+  for (const [key, sourceValue] of Object.entries(source)) {
     if (!(key in target)) {
-      entries.push({ key, source: srcValue as string | null, target: null, status: "missing" });
+      entries.push({ key, source: sourceValue as string | null, target: null, status: "missing" });
       continue;
     }
-    const tgtValue = target[key];
-    if (!isTruthy(tgtValue) && isTruthy(srcValue)) {
-      entries.push({ key, source: srcValue as string | null, target: "", status: "empty" });
+    if (!isTruthy(target[key]) && isTruthy(sourceValue)) {
+      entries.push({ key, source: sourceValue as string | null, target: "", status: "empty" });
     }
   }
   return entries;
 }
 
-export function diffFile(
-  root: string,
-  sourceLocale: string,
-  targetLocale: string,
-  filename: string,
-): StringEntry[] {
-  const src = loadFlat(sourceStringsPath(root, sourceLocale, filename));
-  const tgt = loadFlat(path.join(stringsDir(root, targetLocale), filename));
-  return diff(src, tgt);
+function targetPath(scope: DiffScope, filename: string): string {
+  return path.join(stringsDir(scope.root, scope.targetLocale), filename);
 }
 
-export function diffNestedFile(
-  root: string,
-  sourceLocale: string,
-  targetLocale: string,
-  filename: string,
-): StringEntry[] {
-  const srcRaw = loadJson(sourceStringsPath(root, sourceLocale, filename));
-  const tgtRaw = loadJson(path.join(stringsDir(root, targetLocale), filename));
-  return diff(
-    flattenNested(isRecord(srcRaw) ? srcRaw : {}),
-    flattenNested(isRecord(tgtRaw) ? tgtRaw : {}),
-  );
+function sourcePath(scope: DiffScope, filename: string): string {
+  return sourceStringsPath(scope.root, scope.sourceLocale, filename);
 }
 
-export function diffStrings(root: string, sourceLocale: string, targetLocale: string): StringEntry[] {
-  return diffFile(root, sourceLocale, targetLocale, STRINGS_FILE);
+function diffFile(scope: DiffScope, filename: string): StringEntry[] {
+  return diff(loadFlat(sourcePath(scope, filename)), loadFlat(targetPath(scope, filename)));
 }
 
-export function diffRegexs(root: string, sourceLocale: string, targetLocale: string): StringEntry[] {
-  return diffFile(root, sourceLocale, targetLocale, REGEXS_FILE);
+function loadNested(filePath: string): Record<string, unknown> {
+  const raw = loadJson(filePath);
+  return isRecord(raw) ? raw : {};
 }
 
-export function diffTipsIz(root: string, sourceLocale: string, targetLocale: string): StringEntry[] {
-  return diffFile(root, sourceLocale, targetLocale, TIPS_IZ_FILE);
+export function diffStrings(root: string, sourceLocale: string, target: string): StringEntry[] {
+  return diffFile({ root, sourceLocale, targetLocale: target }, STRINGS_FILE);
 }
 
-export function diffTipsFs(root: string, sourceLocale: string, targetLocale: string): StringEntry[] {
-  return diffFile(root, sourceLocale, targetLocale, TIPS_FS_FILE);
+export function diffRegexs(root: string, sourceLocale: string, target: string): StringEntry[] {
+  return diffFile({ root, sourceLocale, targetLocale: target }, REGEXS_FILE);
 }
 
-export function diffAbyssBuffs(root: string, sourceLocale: string, targetLocale: string): StringEntry[] {
-  return diffFile(root, sourceLocale, targetLocale, ABYSS_BUFFS_FILE);
+export function diffTipsIz(root: string, sourceLocale: string, target: string): StringEntry[] {
+  return diffFile({ root, sourceLocale, targetLocale: target }, TIPS_IZ_FILE);
+}
+
+export function diffTipsFs(root: string, sourceLocale: string, target: string): StringEntry[] {
+  return diffFile({ root, sourceLocale, targetLocale: target }, TIPS_FS_FILE);
+}
+
+export function diffAbyssBuffs(root: string, sourceLocale: string, target: string): StringEntry[] {
+  return diffFile({ root, sourceLocale, targetLocale: target }, ABYSS_BUFFS_FILE);
+}
+
+/** Display name of a travel buff, across the legacy and current formats. */
+function travelBuffName(raw: unknown): string | null {
+  if (isRecord(raw) && typeof raw.name === "string") return raw.name;
+  return typeof raw === "string" ? raw : null;
+}
+
+/** Buffs of one category present in `source` whose ID is absent from `target`. */
+function missingBuffsInCategory(
+  category: string,
+  source: Record<string, unknown>,
+  target: Record<string, unknown>,
+): TravelBuffEntry[] {
+  const entries: TravelBuffEntry[] = [];
+  for (const [id, raw] of Object.entries(source)) {
+    if (Object.hasOwn(target, id)) continue;
+    entries.push({
+      key: `${category}${KEY_SEPARATOR}${id}`,
+      category,
+      id,
+      raw,
+      source: travelBuffName(raw),
+      target: null,
+      status: "missing",
+    });
+  }
+  return entries;
 }
 
 export function diffTravelBuffs(
@@ -123,32 +149,15 @@ export function diffTravelBuffs(
   sourceLocale: string,
   targetLocale: string,
 ): TravelBuffEntry[] {
-  const srcRaw = loadJson(sourceStringsPath(root, sourceLocale, TRAVEL_BUFFS_FILE));
-  const tgtRaw = loadJson(path.join(stringsDir(root, targetLocale), TRAVEL_BUFFS_FILE));
-  const source = isRecord(srcRaw) ? srcRaw : {};
-  const target = isRecord(tgtRaw) ? tgtRaw : {};
-  const entries: TravelBuffEntry[] = [];
+  const scope: DiffScope = { root, sourceLocale, targetLocale };
+  const source = loadNested(sourcePath(scope, TRAVEL_BUFFS_FILE));
+  const target = loadNested(targetPath(scope, TRAVEL_BUFFS_FILE));
 
+  const entries: TravelBuffEntry[] = [];
   for (const [category, sourceGroup] of Object.entries(source)) {
     if (!isRecord(sourceGroup)) continue;
     const targetGroup = isRecord(target[category]) ? target[category] : {};
-    for (const [id, raw] of Object.entries(sourceGroup)) {
-      if (Object.hasOwn(targetGroup, id)) continue;
-      const name = isRecord(raw) && typeof raw.name === "string"
-        ? raw.name
-        : typeof raw === "string"
-          ? raw
-          : null;
-      entries.push({
-        key: `${category}:${id}`,
-        category,
-        id,
-        raw,
-        source: name,
-        target: null,
-        status: "missing",
-      });
-    }
+    entries.push(...missingBuffsInCategory(category, sourceGroup, targetGroup));
   }
   return entries;
 }

@@ -1,10 +1,15 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { loadJson, stringsDir } from "../parsers/loaders";
-import { ABYSS_BUFFS_FILE, TIPS_FS_FILE, TIPS_IZ_FILE, TRAVEL_BUFFS_FILE } from "../parsers/strings";
+import { isObjectLike, isRecord } from "../core/guards";
+import { DUMPS_DIRNAME, loadJson, stringsDir } from "../parsers/loaders";
+import {
+  ABYSS_BUFFS_FILE,
+  TIPS_FS_FILE,
+  TIPS_IZ_FILE,
+  TRAVEL_BUFFS_FILE,
+} from "../parsers/strings";
 
-export const DUMPS_DIRNAME = "Dumps";
 export const TRANSLATION_STRINGS_FILE = "translation_strings.json";
 export const ABYSS_DUMP_FILE = "AbyssBuffData.json";
 
@@ -14,6 +19,8 @@ export const CUSTOM_LEVEL_DATA_FILE = "custom_level_data.json";
 
 /** UTF-8-SIG BOM prepended to written files (the game reads them this way). */
 const BOM = "﻿";
+/** Indentation the game's own locale files use. */
+const JSON_INDENT = 4;
 
 export type FileStatus = "created" | "skippedExists" | "sourceMissing";
 
@@ -44,15 +51,6 @@ interface Target {
   filename: string;
   /** Source entries, or `null` when the source file is absent. */
   extract(): SourceEntry[] | null;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/** Like `isRecord` but also accepts arrays — game dumps key some containers as `[...]`. */
-function isObjectLike(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
 
 function asString(value: unknown): string | null {
@@ -185,28 +183,35 @@ function buildTree(
 function runMigration(root: string, locale: string, targets: Target[]): MigrationResult {
   const translationStrings = loadTranslationStrings(root, locale);
   const destDir = stringsDir(root, locale);
-  const files: FileMigrationResult[] = [];
+  return {
+    locale,
+    files: targets.map((target) => migrateTarget(target, destDir, translationStrings)),
+  };
+}
 
-  for (const target of targets) {
-    const destPath = path.join(destDir, target.filename);
-    if (existsSync(destPath)) {
-      files.push({ filename: target.filename, status: "skippedExists", migrated: 0, available: 0 });
-      continue;
-    }
+function skipped(filename: string, status: FileStatus): FileMigrationResult {
+  return { filename, status, migrated: 0, available: 0 };
+}
 
-    const entries = target.extract();
-    if (entries === null) {
-      files.push({ filename: target.filename, status: "sourceMissing", migrated: 0, available: 0 });
-      continue;
-    }
-
-    const { tree, migrated } = buildTree(entries, translationStrings);
-    mkdirSync(destDir, { recursive: true });
-    writeFileSync(destPath, BOM + JSON.stringify(tree, null, 4), { encoding: "utf-8" });
-    files.push({ filename: target.filename, status: "created", migrated, available: entries.length });
+function migrateTarget(
+  target: Target,
+  destDir: string,
+  translationStrings: Record<string, string>,
+): FileMigrationResult {
+  const destPath = path.join(destDir, target.filename);
+  if (existsSync(destPath)) {
+    return skipped(target.filename, "skippedExists");
   }
 
-  return { locale, files };
+  const entries = target.extract();
+  if (entries === null) {
+    return skipped(target.filename, "sourceMissing");
+  }
+
+  const { tree, migrated } = buildTree(entries, translationStrings);
+  mkdirSync(destDir, { recursive: true });
+  writeFileSync(destPath, BOM + JSON.stringify(tree, null, JSON_INDENT), { encoding: "utf-8" });
+  return { filename: target.filename, status: "created", migrated, available: entries.length };
 }
 
 /**
@@ -219,7 +224,10 @@ export function migrateTipsAndBuffs(root: string, locale: string): MigrationResu
     { filename: TIPS_IZ_FILE, extract: () => extractKeyedPairs(path.join(dumps, TIPS_IZ_FILE)) },
     { filename: TIPS_FS_FILE, extract: () => extractKeyedPairs(path.join(dumps, TIPS_FS_FILE)) },
     { filename: ABYSS_BUFFS_FILE, extract: () => extractAbyss(path.join(dumps, ABYSS_DUMP_FILE)) },
-    { filename: TRAVEL_BUFFS_FILE, extract: () => extractNested(path.join(dumps, TRAVEL_BUFFS_FILE)) },
+    {
+      filename: TRAVEL_BUFFS_FILE,
+      extract: () => extractNested(path.join(dumps, TRAVEL_BUFFS_FILE)),
+    },
   ]);
 }
 

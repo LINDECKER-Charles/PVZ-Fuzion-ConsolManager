@@ -91,7 +91,7 @@ describe("buildTrelloCsv", () => {
 describe("writeTrelloCsvsByList", () => {
   it("writes one CSV per list and sanitizes filenames", () => {
     const tmpPath = makeTmp();
-    const paths = writeTrelloCsvsByList(
+    const lists = writeTrelloCsvsByList(
       [
         card({ name: "A", listName: "Plants" }),
         card({ name: "B", listName: "Plants" }),
@@ -99,31 +99,30 @@ describe("writeTrelloCsvsByList", () => {
       ],
       tmpPath,
     );
-    expect(Object.keys(paths).sort()).toEqual(["I, Zombie", "Plants"]);
-    expect(path.basename(paths["Plants"]!)).toBe("trello_Plants.csv");
+    const byName = new Map(lists.map((list) => [list.name, list]));
+    expect([...byName.keys()].sort()).toEqual(["I, Zombie", "Plants"]);
+    expect(path.basename(byName.get("Plants")!.csvPath)).toBe("trello_Plants.csv");
     // "I, Zombie" -> non-alnum runs collapse to "_", trailing "_" stripped.
-    expect(path.basename(paths["I, Zombie"]!)).toBe("trello_I_Zombie.csv");
+    expect(path.basename(byName.get("I, Zombie")!.csvPath)).toBe("trello_I_Zombie.csv");
+    expect(byName.get("Plants")!.cardCount).toBe(2);
     // Plants file has header + 2 rows.
-    expect(read(paths["Plants"]!).split("\r\n").filter(Boolean)).toHaveLength(3);
+    expect(read(byName.get("Plants")!.csvPath).split("\r\n").filter(Boolean)).toHaveLength(3);
   });
 
   it("produces no file for empty input", () => {
-    const tmpPath = makeTmp();
-    const paths = writeTrelloCsvsByList([], tmpPath);
-    expect(paths).toEqual({});
+    expect(writeTrelloCsvsByList([], makeTmp())).toEqual([]);
   });
 
   it("honours a custom filename prefix", () => {
-    const tmpPath = makeTmp();
-    const paths = writeTrelloCsvsByList([card({ listName: "Regex" })], tmpPath, "export_");
-    expect(path.basename(paths["Regex"]!)).toBe("export_Regex.csv");
+    const lists = writeTrelloCsvsByList([card({ listName: "Regex" })], makeTmp(), "export_");
+    expect(path.basename(lists[0].csvPath)).toBe("export_Regex.csv");
   });
 });
 
 describe("buildTrelloReadme", () => {
-  it("renders the stats table and counts data rows", () => {
+  it("renders the stats table from the written lists", () => {
     const tmpPath = makeTmp();
-    const paths = writeTrelloCsvsByList(
+    const lists = writeTrelloCsvsByList(
       [
         card({ name: "A", listName: "Plants" }),
         card({ name: "B", listName: "Plants" }),
@@ -131,9 +130,9 @@ describe("buildTrelloReadme", () => {
       ],
       tmpPath,
     );
-    const out = path.join(tmpPath, "README.md");
-    buildTrelloReadme("French", paths, "To be translated", out);
-    const body = read(out);
+    const outputPath = path.join(tmpPath, "README.md");
+    buildTrelloReadme({ locale: "French", label: "To be translated", outputPath, lists });
+    const body = read(outputPath);
     expect(body).toContain("# 🗂️ Trello Import — French Missing Translations");
     expect(body).toContain("`To be translated`");
     // 2 + 1 = 3 cards total.
@@ -144,10 +143,9 @@ describe("buildTrelloReadme", () => {
   });
 
   it("renders the empty-export fallback", () => {
-    const tmpPath = makeTmp();
-    const out = path.join(tmpPath, "README.md");
-    buildTrelloReadme("French", {}, "To be translated", out);
-    const body = read(out);
+    const outputPath = path.join(makeTmp(), "README.md");
+    buildTrelloReadme({ locale: "French", label: "To be translated", outputPath, lists: [] });
+    const body = read(outputPath);
     expect(body).toContain("_Nothing to import — the target locale looks fully translated._");
     expect(body).toContain("trello_Plants.csv");
     expect(body).toContain("   _(no lists required — export is empty)_");

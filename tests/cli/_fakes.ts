@@ -1,8 +1,10 @@
 /** Test doubles for the CLI seam — the Vitest equivalent of the pytest
  * monkeypatches in `test_cli_app.py` / `test_cli_interactive.py`. */
 
-import type { ConsoleIO, MenuOption } from "../../src/cli/menus";
-import type { AppDeps } from "../../src/cli/app";
+import { MENU_CANCELLED } from "../../src/cli/menus";
+import type { MenuOption } from "../../src/cli/menus";
+import type { ConsoleIO } from "../../src/cli/output";
+import type { AppDeps } from "../../src/cli/deps";
 
 /** A ConsoleIO that yields scripted answers and records every write. */
 export class FakeIO implements ConsoleIO {
@@ -37,49 +39,39 @@ export function seq<T>(...values: T[]): () => T {
   return () => values[i++];
 }
 
-export interface FakeDepsOverrides {
-  io?: ConsoleIO;
-  saveSettings?: AppDeps["saveSettings"];
-  renderTitle?: AppDeps["renderTitle"];
-  askChoice?: AppDeps["askChoice"];
-  askChoiceFromList?: AppDeps["askChoiceFromList"];
-  askText?: AppDeps["askText"];
-  selectLocalization?: AppDeps["selectLocalization"];
-  clearConsole?: AppDeps["clearConsole"];
-  pressEnterToContinue?: AppDeps["pressEnterToContinue"];
-  info?: AppDeps["info"];
-  success?: AppDeps["success"];
-  warn?: AppDeps["warn"];
-  error?: AppDeps["error"];
-  section?: AppDeps["section"];
-}
+export type FakeDepsOverrides = Partial<AppDeps>;
 
 /**
  * Silenced-by-default deps bundle. Print-ish helpers are no-ops (mirrors the
  * `silence_ui` fixture); override any member to script behaviour. The `io`
  * still records writes done directly via `deps.io.write(...)`.
+ *
+ * `askChoice` defaults to {@link MENU_CANCELLED}, i.e. "escape this screen" —
+ * an unscripted menu leaves rather than picking an arbitrary entry.
  */
 export function fakeDeps(overrides: FakeDepsOverrides = {}): AppDeps {
   const io = overrides.io ?? new FakeIO();
   return {
     io,
-    saveSettings: overrides.saveSettings ?? (() => null),
-    renderTitle: overrides.renderTitle ?? (() => {}),
-    askChoice:
-      overrides.askChoice ??
-      ((_t: string, _o: readonly MenuOption[], d = -1) => Promise.resolve(d)),
-    askChoiceFromList:
-      overrides.askChoiceFromList ??
-      ((_l: string, _v: readonly string[], current: string) => Promise.resolve(current)),
-    askText: overrides.askText ?? ((_l: string, d = "") => Promise.resolve(d)),
-    selectLocalization:
-      overrides.selectLocalization ?? (() => Promise.resolve("French")),
-    clearConsole: overrides.clearConsole ?? (() => {}),
-    pressEnterToContinue: overrides.pressEnterToContinue ?? (() => Promise.resolve()),
-    info: overrides.info ?? (() => {}),
-    success: overrides.success ?? (() => {}),
-    warn: overrides.warn ?? (() => {}),
-    error: overrides.error ?? (() => {}),
-    section: overrides.section ?? (() => {}),
+    saveSettings: () => null,
+    renderTitle: () => {},
+    header: () => {},
+    panel: () => {},
+    farewell: () => {},
+    askChoice: (_t: string, _o: readonly MenuOption[], initial?: number) =>
+      Promise.resolve(initial ?? MENU_CANCELLED),
+    askChoiceFromList: (_l: string, _v: readonly string[], current: string) =>
+      Promise.resolve(current),
+    askText: (_l: string, d = "") => Promise.resolve(d),
+    askConfirm: (_l: string, d = false) => Promise.resolve(d),
+    selectLocalization: () => Promise.resolve("French"),
+    clearConsole: () => {},
+    pressEnterToContinue: () => Promise.resolve(),
+    info: () => {},
+    success: () => {},
+    warn: () => {},
+    error: () => {},
+    section: () => {},
+    ...overrides,
   };
 }

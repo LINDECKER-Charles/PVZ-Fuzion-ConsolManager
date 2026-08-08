@@ -1,15 +1,12 @@
-import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 
-import { REPO_ROOT, PROJECT_ROOT } from "./config";
+import { PROJECT_ROOT, SOURCE_LOCALE } from "./config";
+import { isDirectory } from "./core/fs";
+import { DEFAULT_TRELLO_LABEL } from "./core/models";
 import { DUMPS_DIRNAME, isDumpsSource } from "./parsers/loaders";
-
-export const SETTINGS_FILENAME = "settings.json";
-/** Absolute path override — pins the settings file (CI, portable installs). */
-export const SETTINGS_ENV_VAR = "PVZF_CONSOLE_SETTINGS";
-/** Folder created inside the per-user config directory. */
-const CONFIG_DIR_NAME = "pvzf-console";
+import { DEFAULT_SUMMARY_OUTPUT } from "./tools/pr-resume";
+import type { LeadIdentity } from "./tools/pr-resume/service";
 
 // ---- enumerations accepted by the settings file ----
 export const COLORS = [
@@ -19,83 +16,105 @@ export const COLORS = [
 ] as const;
 export const DENSITIES = ["compact", "comfortable", "spacious"] as const;
 
-export interface AppSettingsInit {
-  projectRoot?: string | null;
-  sourceLocale?: string;
-  color?: string;
-  accentColor?: string;
-  density?: string;
-  showEmoji?: boolean;
-  showBanner?: boolean;
-  trelloLabel?: string;
-}
+/** Defaults for the documentation lead — the maintainer who reviews the locale. */
+export const DEFAULT_DOCS_LEAD_NAME = "Charles LINDECKER";
+export const DEFAULT_DOCS_LEAD_ALIASES = ["@LINDECKER-Charles", "LINDECKER-Charles"] as const;
 
-/** On-disk representation — snake_case keys, kept for backward compatibility. */
-interface SettingsFile {
-  project_root: string | null;
-  source_locale: string;
-  color: string;
-  accent_color: string;
-  density: string;
-  show_emoji: boolean;
-  show_banner: boolean;
-  trello_label: string;
-}
+const LOCALIZATION_DIRNAME = "Localization";
 
-const FILE_KEYS = [
-  "project_root",
-  "source_locale",
-  "color",
-  "accent_color",
-  "density",
-  "show_emoji",
-  "show_banner",
-  "trello_label",
-] as const;
-
-function isDir(p: string): boolean {
-  try {
-    return statSync(p).isDirectory();
-  } catch {
-    return false;
-  }
-}
-
-export class AppSettings {
-  projectRoot: string | null; // absolute path to PvZ_Fusion_Translator; null -> default
+/** Every tunable, in its in-memory form. */
+interface SettingsValues {
+  /** Absolute path to `PvZ_Fusion_Translator/`; `null` uses the discovered default. */
+  projectRoot: string | null;
   sourceLocale: string;
-  color: string; // primary text color
-  accentColor: string; // section headers / emphasis
-  density: string; // compact | comfortable | spacious
+  /** Primary text colour. */
+  color: string;
+  /** Colour for section headers and emphasis. */
+  accentColor: string;
+  /** `compact` | `comfortable` | `spacious`. */
+  density: string;
   showEmoji: boolean;
   showBanner: boolean;
   trelloLabel: string;
+  /** Canonical display name of the locale maintainer, used by the docs tools. */
+  docsLeadName: string;
+  /** Every other spelling of the lead found in PR recaps (handles, display names). */
+  docsLeadAliases: readonly string[];
+  /** Default output file for the generated contribution summary. */
+  docsOutput: string;
+}
+
+export type AppSettingsInit = Partial<SettingsValues>;
+
+const DEFAULT_SETTINGS: SettingsValues = {
+  projectRoot: null,
+  sourceLocale: SOURCE_LOCALE,
+  color: "default",
+  accentColor: "cyan",
+  density: "comfortable",
+  showEmoji: true,
+  showBanner: true,
+  trelloLabel: DEFAULT_TRELLO_LABEL,
+  docsLeadName: DEFAULT_DOCS_LEAD_NAME,
+  docsLeadAliases: DEFAULT_DOCS_LEAD_ALIASES,
+  docsOutput: DEFAULT_SUMMARY_OUTPUT,
+};
+
+/** Overlay `init` on the defaults, ignoring keys explicitly set to `undefined`. */
+function withDefaults(init: AppSettingsInit): SettingsValues {
+  const values: Record<string, unknown> = { ...DEFAULT_SETTINGS };
+  for (const [key, value] of Object.entries(init)) {
+    if (value !== undefined) {
+      values[key] = value;
+    }
+  }
+  return values as unknown as SettingsValues;
+}
+
+export class AppSettings implements SettingsValues {
+  projectRoot: string | null;
+  sourceLocale: string;
+  color: string;
+  accentColor: string;
+  density: string;
+  showEmoji: boolean;
+  showBanner: boolean;
+  trelloLabel: string;
+  docsLeadName: string;
+  docsLeadAliases: string[];
+  docsOutput: string;
 
   constructor(init: AppSettingsInit = {}) {
-    this.projectRoot = init.projectRoot ?? null;
-    this.sourceLocale = init.sourceLocale ?? "English";
-    this.color = init.color ?? "default";
-    this.accentColor = init.accentColor ?? "cyan";
-    this.density = init.density ?? "comfortable";
-    this.showEmoji = init.showEmoji ?? true;
-    this.showBanner = init.showBanner ?? true;
-    this.trelloLabel = init.trelloLabel ?? "To be translated";
+    const values = withDefaults(init);
+    this.projectRoot = values.projectRoot;
+    this.sourceLocale = values.sourceLocale;
+    this.color = values.color;
+    this.accentColor = values.accentColor;
+    this.density = values.density;
+    this.showEmoji = values.showEmoji;
+    this.showBanner = values.showBanner;
+    this.trelloLabel = values.trelloLabel;
+    this.docsLeadName = values.docsLeadName;
+    this.docsLeadAliases = [...values.docsLeadAliases];
+    this.docsOutput = values.docsOutput;
+  }
+
+  /** The lead identity consumed by the PR-recap tool. */
+  leadIdentity(): LeadIdentity {
+    return { name: this.docsLeadName, aliases: this.docsLeadAliases };
   }
 
   resolvedProjectRoot(): string {
-    if (this.projectRoot) {
-      return path.resolve(expanduser(this.projectRoot));
-    }
-    return PROJECT_ROOT;
+    return this.projectRoot ? path.resolve(expandUser(this.projectRoot)) : PROJECT_ROOT;
   }
 
   validateProjectRoot(): string | null {
-    const p = this.resolvedProjectRoot();
-    if (!isDir(p)) {
-      return `Directory does not exist: ${p}`;
+    const root = this.resolvedProjectRoot();
+    if (!isDirectory(root)) {
+      return `Directory does not exist: ${root}`;
     }
-    if (!isDir(path.join(p, "Localization"))) {
-      return `Missing 'Localization' subfolder in ${p}`;
+    if (!isDirectory(path.join(root, LOCALIZATION_DIRNAME))) {
+      return `Missing '${LOCALIZATION_DIRNAME}' subfolder in ${root}`;
     }
     return null;
   }
@@ -111,166 +130,27 @@ export class AppSettings {
    * `Localization/<locale>/`.
    */
   validateSourceLocale(): string | null {
-    const p = this.resolvedProjectRoot();
+    const root = this.resolvedProjectRoot();
     if (this.usesDumpsSource()) {
-      if (!isDir(path.join(p, DUMPS_DIRNAME))) {
-        return `Missing '${DUMPS_DIRNAME}' subfolder in ${p}`;
-      }
-      return null;
+      return isDirectory(path.join(root, DUMPS_DIRNAME))
+        ? null
+        : `Missing '${DUMPS_DIRNAME}' subfolder in ${root}`;
     }
-    if (!isDir(path.join(p, "Localization", this.sourceLocale))) {
-      return `Source locale folder not found: Localization/${this.sourceLocale}`;
+    if (!isDirectory(path.join(root, LOCALIZATION_DIRNAME, this.sourceLocale))) {
+      return `Source locale folder not found: ${LOCALIZATION_DIRNAME}/${this.sourceLocale}`;
     }
     return null;
-  }
-
-  toFile(): SettingsFile {
-    return {
-      project_root: this.projectRoot,
-      source_locale: this.sourceLocale,
-      color: this.color,
-      accent_color: this.accentColor,
-      density: this.density,
-      show_emoji: this.showEmoji,
-      show_banner: this.showBanner,
-      trello_label: this.trelloLabel,
-    };
-  }
-
-  static fromFile(data: Partial<SettingsFile>): AppSettings {
-    return new AppSettings({
-      projectRoot: data.project_root ?? null,
-      sourceLocale: data.source_locale,
-      color: data.color,
-      accentColor: data.accent_color,
-      density: data.density,
-      showEmoji: data.show_emoji,
-      showBanner: data.show_banner,
-      trelloLabel: data.trello_label,
-    });
   }
 }
 
 /** Expand a leading `~` to the user's home, mirroring `Path.expanduser`. */
-function expanduser(p: string): string {
-  if (p === "~" || p.startsWith("~/") || p.startsWith("~\\")) {
-    return path.join(homeDir(), p.slice(1));
+export function expandUser(target: string): string {
+  if (target === "~" || target.startsWith("~/") || target.startsWith("~\\")) {
+    return path.join(homeDir(), target.slice(1));
   }
-  return p;
+  return target;
 }
 
-function homeDir(): string {
+export function homeDir(): string {
   return process.env.HOME ?? process.env.USERPROFILE ?? homedir();
-}
-
-/**
- * Per-user config directory, following each platform's convention:
- *   - Windows: `%APPDATA%\pvzf-console` (then `%LOCALAPPDATA%`, then
- *     `~\AppData\Roaming\pvzf-console`)
- *   - macOS:   `~/Library/Application Support/pvzf-console`
- *   - other:   `$XDG_CONFIG_HOME/pvzf-console`, else `~/.config/pvzf-console`
- *
- * `$XDG_CONFIG_HOME` wins on every POSIX platform (macOS included) when set to
- * an absolute path — the spec says relative values must be ignored.
- * Returns `null` when no home can be resolved (bare containers), so callers
- * fall back to {@link legacySettingsPath}.
- */
-export function userConfigDir(): string | null {
-  if (process.platform === "win32") {
-    const base = process.env.APPDATA ?? process.env.LOCALAPPDATA;
-    if (base) return path.join(base, CONFIG_DIR_NAME);
-    const home = homeDir();
-    return home ? path.join(home, "AppData", "Roaming", CONFIG_DIR_NAME) : null;
-  }
-  const xdg = process.env.XDG_CONFIG_HOME;
-  if (xdg && path.isAbsolute(xdg)) return path.join(xdg, CONFIG_DIR_NAME);
-  const home = homeDir();
-  if (!home) return null;
-  if (process.platform === "darwin") {
-    return path.join(home, "Library", "Application Support", CONFIG_DIR_NAME);
-  }
-  return path.join(home, ".config", CONFIG_DIR_NAME);
-}
-
-/**
- * Where versions up to 1.4.1 kept the file: inside the package itself.
- *
- * Still read (see {@link loadSettings}) and never deleted, so an older copy of
- * the tool installed alongside keeps working. Not written to anymore: a global
- * install can live in a root-owned prefix (`/usr/local/lib/node_modules`,
- * `C:\Program Files\nodejs`) where a normal user cannot write.
- */
-export function legacySettingsPath(): string {
-  return path.join(REPO_ROOT, SETTINGS_FILENAME);
-}
-
-/**
- * The file settings are written to. Precedence:
- *   1. `$PVZF_CONSOLE_SETTINGS`
- *   2. the per-user config directory
- *   3. the legacy in-package path, when no home directory exists
- */
-export function settingsPath(): string {
-  const override = process.env[SETTINGS_ENV_VAR];
-  if (override) return path.resolve(expanduser(override));
-  const dir = userConfigDir();
-  return dir === null ? legacySettingsPath() : path.join(dir, SETTINGS_FILENAME);
-}
-
-/** Read one settings file. `null` = absent or unusable; unknown keys dropped. */
-function readSettingsFile(p: string): Partial<SettingsFile> | null {
-  let raw: string;
-  try {
-    if (!statSync(p).isFile()) return null;
-    raw = readFileSync(p, { encoding: "utf-8" });
-  } catch {
-    return null;
-  }
-  let data: unknown;
-  try {
-    data = JSON.parse(raw);
-  } catch {
-    return null;
-  }
-  if (typeof data !== "object" || data === null) {
-    return null;
-  }
-  const filtered: Partial<SettingsFile> = {};
-  for (const key of FILE_KEYS) {
-    if (key in data) {
-      (filtered as Record<string, unknown>)[key] = (data as Record<string, unknown>)[key];
-    }
-  }
-  return filtered;
-}
-
-/**
- * Load from {@link settingsPath}, falling back to {@link legacySettingsPath}.
- *
- * The fallback is what makes upgrades seamless: a 1.4.1 install already has its
- * `settings.json` in the package, so it is picked up on the first run and
- * rewritten to the per-user location on the next save. Once the new file
- * exists it wins, and the legacy one is left alone.
- */
-export function loadSettings(): AppSettings {
-  const primary = settingsPath();
-  const legacy = legacySettingsPath();
-  const data =
-    readSettingsFile(primary) ?? (primary === legacy ? null : readSettingsFile(legacy));
-  return data === null ? new AppSettings() : AppSettings.fromFile(data);
-}
-
-/**
- * Persist settings. Returns `null` on success, or a human-readable reason —
- * a read-only config directory must not take the whole CLI down.
- */
-export function saveSettings(settings: AppSettings): string | null {
-  const p = settingsPath();
-  try {
-    mkdirSync(path.dirname(p), { recursive: true });
-    writeFileSync(p, JSON.stringify(settings.toFile(), null, 2), { encoding: "utf-8" });
-    return null;
-  } catch (e) {
-    return `${p}: ${e instanceof Error ? e.message : String(e)}`;
-  }
 }

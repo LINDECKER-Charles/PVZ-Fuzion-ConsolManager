@@ -1,300 +1,182 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-import { createTempProject, type TempProject } from "../helpers";
-import { App, CliArgError, main, parseCliArgs } from "../../src/cli/app";
+import { App, MAIN_MENU_ACTIONS } from "../../src/cli/app";
+import { MENU_CANCELLED } from "../../src/cli/menus";
+import { THEME } from "../../src/cli/theme";
 import { AppSettings } from "../../src/settings";
-import { PLANTS_FILE, ZOMBIES_FILE, ACHIEVEMENTS_FILE } from "../../src/parsers/almanac";
-import { fakeDeps } from "./_fakes";
+import { createTempProject, type TempProject } from "../helpers";
+import { fakeDeps, seq } from "./_fakes";
 
-/** Mirror of the pytest `configured_app` fixture: an App pointed at a temp
- * project root and a temp reports dir, with silenced deps. */
-function makeApp(project: TempProject): { app: App; reports: string } {
-  const reports = path.join(project.root, "..", "reports");
-  const settings = new AppSettings({ projectRoot: project.root, sourceLocale: "English" });
-  const app = new App(settings, fakeDeps(), reports);
-  return { app, reports };
+vi.mock("../../src/cli/screens/missing", () => ({ showMissing: vi.fn(() => Promise.resolve()) }));
+vi.mock("../../src/cli/screens/tools-menu", () => ({
+  translatorTools: vi.fn(() => Promise.resolve()),
+}));
+vi.mock("../../src/cli/screens/documentation", () => ({
+  documentation: vi.fn(() => Promise.resolve()),
+}));
+vi.mock("../../src/cli/screens/settings", () => ({
+  settingsMenu: vi.fn(() => Promise.resolve()),
+}));
+
+let project: TempProject;
+
+function makeApp(
+  overrides: Parameters<typeof fakeDeps>[0] = {},
+  settings?: AppSettings,
+): App {
+  return new App({
+    settings: settings ?? new AppSettings({ projectRoot: project.root, sourceLocale: "English" }),
+    deps: fakeDeps(overrides),
+    reportsRoot: path.join(project.root, "..", "reports"),
+  });
 }
 
-describe("non-interactive run helpers", () => {
-  let project: TempProject;
-  let app: App;
-  let reports: string;
-
-  beforeEach(() => {
-    project = createTempProject();
-    ({ app, reports } = makeApp(project));
-  });
-
-  afterEach(() => {
-    project.cleanup();
-  });
-
-  it("runStrings writes a report and returns the missing count", () => {
-    project.makeLocale("English", { strings: { "translation_strings.json": { a: "A", b: "B" } } });
-    project.makeLocale("French", { strings: { "translation_strings.json": { a: "FR-A" } } });
-    const count = app.runStrings(["French"]);
-    expect(count).toBe(1);
-    expect(existsSync(path.join(reports, "French", "missing_strings.md"))).toBe(true);
-  });
-
-  it("runStrings with diff also writes JSON", () => {
-    project.makeLocale("English", { strings: { "translation_strings.json": { a: "A", b: "B" } } });
-    project.makeLocale("French", { strings: { "translation_strings.json": { a: "FR-A" } } });
-    app.runStrings(["French"], true);
-    const jsonPath = path.join(reports, "French", "strings_diff.json");
-    expect(existsSync(jsonPath)).toBe(true);
-    expect(JSON.parse(readFileSync(jsonPath, "utf-8"))).toEqual({ b: "B" });
-  });
-
-  it("runStrings skips the source locale", () => {
-    project.makeLocale("English", { strings: { "translation_strings.json": { a: "A" } } });
-    expect(app.runStrings(["English"])).toBe(0);
-  });
-
-  it("runTips warns when files are missing", () => {
-    const warned: string[] = [];
-    app = new App(
-      new AppSettings({ projectRoot: project.root, sourceLocale: "English" }),
-      fakeDeps({ warn: (m) => warned.push(m) }),
-      reports,
-    );
-    project.makeLocale("English", {
-      strings: { "tips_iz.json": { K: "Hi" }, "tips_fs.json": { K: "Hi" } },
-    });
-    project.makeLocale("French");
-    const count = app.runTips(["French"]);
-    expect(count).toBe(0);
-    const out = warned.join("\n");
-    expect(out).toContain("tips_iz.json missing");
-    expect(out).toContain("tips_fs.json missing");
-  });
-
-  it("runAbyssBuffs warns when the target file is missing", () => {
-    const warned: string[] = [];
-    app = new App(
-      new AppSettings({ projectRoot: project.root, sourceLocale: "English" }),
-      fakeDeps({ warn: (m) => warned.push(m) }),
-      reports,
-    );
-    project.makeLocale("English", { strings: { "abyss_buffs.json": { K: "V" } } });
-    project.makeLocale("French");
-    app.runAbyssBuffs(["French"]);
-    expect(warned.join("\n")).toContain("abyss_buffs.json missing");
-  });
-
-  it("runPlants writes a report (and diff)", () => {
-    project.makeLocale("English", {
-      almanac: { [PLANTS_FILE]: { plants: [{ seedType: 1, name: "Peashooter" }] } },
-    });
-    project.makeLocale("French", { almanac: { [PLANTS_FILE]: { plants: [] } } });
-    const count = app.runPlants(["French"], true);
-    expect(count).toBe(1);
-    expect(existsSync(path.join(reports, "French", "missing_plants.md"))).toBe(true);
-    expect(existsSync(path.join(reports, "French", "plants_diff.json"))).toBe(true);
-  });
-
-  it("runZombies and runAchievements count missing entries", () => {
-    project.makeLocale("English", {
-      almanac: {
-        [ZOMBIES_FILE]: { zombies: [{ theZombieType: 1, name: "Z" }] },
-        [ACHIEVEMENTS_FILE]: { achievements: [{ achievement: "X", Name: "A" }] },
-      },
-    });
-    project.makeLocale("French", {
-      almanac: { [ZOMBIES_FILE]: { zombies: [] }, [ACHIEVEMENTS_FILE]: { achievements: [] } },
-    });
-    expect(app.runZombies(["French"])).toBe(1);
-    expect(app.runAchievements(["French"])).toBe(1);
-  });
-
-  it("runAll aggregates across types", () => {
-    project.makeLocale("English", {
-      strings: {
-        "translation_strings.json": { a: "A" },
-        "translation_regexs.json": { r: "R" },
-      },
-    });
-    project.makeLocale("French");
-    expect(app.runAll(["French"])).toBeGreaterThanOrEqual(2);
-  });
+beforeEach(() => {
+  project = createTempProject();
 });
 
-describe("cmdDiff", () => {
-  let project: TempProject;
-  let app: App;
-  let reports: string;
-  let outSpy: any;
-  let errSpy: any;
+afterEach(() => {
+  project.cleanup();
+  vi.restoreAllMocks();
+});
 
-  beforeEach(() => {
-    project = createTempProject();
-    ({ app, reports } = makeApp(project));
-    outSpy = vi.spyOn(process.stdout, "write").mockReturnValue(true);
-    errSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+describe("App state", () => {
+  it("resolves the project root and the source locale from the settings", () => {
+    const app = makeApp();
+    expect(app.projectRoot()).toBe(path.resolve(project.root));
+    expect(app.sourceLocale()).toBe("English");
   });
 
-  afterEach(() => {
-    outSpy.mockRestore();
-    errSpy.mockRestore();
-    project.cleanup();
+  it("pushes the settings into the theme", () => {
+    const configure = vi.spyOn(THEME, "configure").mockImplementation(() => {});
+    const app = makeApp(
+      {},
+      new AppSettings({
+        color: "red",
+        accentColor: "cyan",
+        density: "compact",
+        showEmoji: false,
+        showBanner: true,
+      }),
+    );
+    app.applyTheme();
+    expect(configure).toHaveBeenCalledWith({
+      color: "red",
+      accent: "cyan",
+      density: "compact",
+      showEmoji: false,
+      showBanner: true,
+    });
   });
 
-  const stdoutText = (): string =>
-    outSpy.mock.calls.map((c: unknown[]) => String(c[0])).join("");
-  const stderrText = (): string =>
-    errSpy.mock.calls.map((c: unknown[]) => String(c[0])).join("");
-
-  it("runs end-to-end and returns 0", () => {
-    project.makeLocale("English", { strings: { "translation_strings.json": { a: "A", b: "B" } } });
-    project.makeLocale("French", { strings: { "translation_strings.json": { a: "FR-A" } } });
-    const rc = app.cmdDiff("French", reports, true);
-    expect(rc).toBe(0);
-    expect(stdoutText()).toContain("1 missing entries");
-    expect(existsSync(path.join(reports, "French", "missing_strings.md"))).toBe(true);
-    expect(existsSync(path.join(reports, "French", "strings_diff.json"))).toBe(true);
+  it("warns instead of throwing when the settings cannot be saved", () => {
+    const warnings: string[] = [];
+    const app = makeApp({ saveSettings: () => "disk is full", warn: (m) => warnings.push(m) });
+    app.persistSettings();
+    expect(warnings.join()).toContain("disk is full");
   });
 
-  it("rejects an unknown locale with exit code 2", () => {
-    project.makeLocale("English", { strings: { "translation_strings.json": { a: "A" } } });
-    const rc = app.cmdDiff("Klingon", null);
-    expect(rc).toBe(2);
-    expect(stderrText()).toContain("not found");
-  });
-
-  it("rejects the source locale as a target with exit code 2", () => {
-    project.makeLocale("English", { strings: { "translation_strings.json": { a: "A" } } });
-    const rc = app.cmdDiff("English", null);
-    expect(rc).toBe(2);
-    expect(stderrText()).toContain("source locale");
-  });
-
-  it("fails with exit code 2 when the root is invalid", () => {
-    const bad = new App(
+  it("requireValidProjectRoot reports and refuses an unusable root", async () => {
+    const errors: string[] = [];
+    const app = makeApp(
+      { error: (m) => errors.push(m) },
       new AppSettings({ projectRoot: path.join(project.root, "nope") }),
-      fakeDeps(),
-      reports,
     );
-    expect(bad.cmdDiff("French", null)).toBe(2);
+    expect(await app.requireValidProjectRoot()).toBe(false);
+    expect(errors.join()).toContain("does not exist");
   });
 
-  it("keeps the default reports root when out is null", () => {
-    project.makeLocale("English", { strings: { "translation_strings.json": { k: "V" } } });
-    project.makeLocale("French");
-    const before = app.reportsRoot;
-    expect(app.cmdDiff("French", null)).toBe(0);
-    expect(app.reportsRoot).toBe(before);
+  it("requireValidProjectRoot accepts a complete project", async () => {
+    expect(await makeApp().requireValidProjectRoot()).toBe(true);
   });
 });
 
-describe("askYesNo / asList", () => {
-  let project: TempProject;
-
-  beforeEach(() => {
-    project = createTempProject();
-  });
-  afterEach(() => {
-    project.cleanup();
+describe("main menu dispatch", () => {
+  it("maps every menu key to a screen", () => {
+    expect([...MAIN_MENU_ACTIONS.keys()].sort()).toEqual([1, 2, 3, 4]);
   });
 
-  it("accepts the French 'oui'", async () => {
-    const app = new App(new AppSettings(), fakeDeps({ askText: () => Promise.resolve("oui") }));
-    expect(await app.askYesNo("Confirm?", false)).toBe(true);
+  it("mainMenu returns the user's choice", async () => {
+    expect(await makeApp({ askChoice: () => Promise.resolve(1) }).mainMenu()).toBe(1);
   });
 
-  it("falls back to the default on empty input", async () => {
-    const app = new App(new AppSettings(), fakeDeps({ askText: () => Promise.resolve("") }));
-    expect(await app.askYesNo("Confirm?", true)).toBe(true);
-    expect(await app.askYesNo("Confirm?", false)).toBe(false);
+  it("runs each screen then exits on the Exit entry", async () => {
+    project.makeLocale("English");
+    const choices = seq(1, 2, 3, 4, 0);
+    const app = makeApp({ askChoice: () => Promise.resolve(choices()) });
+    await expect(app.runInteractive()).resolves.toBeUndefined();
   });
 
-  it("wraps scalars and passes lists through", () => {
-    const app = new App(new AppSettings(), fakeDeps());
-    expect(app.asList("French")).toEqual(["French"]);
-    expect(app.asList(["A", "B"])).toEqual(["A", "B"]);
-  });
-});
-
-describe("parseCliArgs", () => {
-  it("recognizes the diff subcommand", () => {
-    const args = parseCliArgs(["diff", "--lang", "French", "--with-diff"]);
-    expect(args.command).toBe("diff");
-    expect(args.lang).toBe("French");
-    expect(args.withDiff).toBe(true);
-    expect(args.out).toBeNull();
-  });
-
-  it("accepts --lang=value and --out", () => {
-    const args = parseCliArgs(["diff", "--lang=German", "--out", "build"]);
-    expect(args.lang).toBe("German");
-    expect(args.out).toBe("build");
-    expect(args.withDiff).toBe(false);
-  });
-
-  it("returns a null command for empty argv", () => {
-    const args = parseCliArgs([]);
-    expect(args.command).toBeNull();
-  });
-
-  it("raises CliArgError (exit 2) for an unknown command", () => {
-    try {
-      parseCliArgs(["bogus"]);
-      expect.unreachable();
-    } catch (e) {
-      expect(e).toBeInstanceOf(CliArgError);
-      expect((e as CliArgError).code).toBe(2);
-    }
-  });
-
-  it("raises CliArgError when --lang is missing", () => {
-    expect(() => parseCliArgs(["diff", "--with-diff"])).toThrow(CliArgError);
-  });
-});
-
-describe("main", () => {
-  let project: TempProject;
-  let outSpy: any;
-  let errSpy: any;
-
-  beforeEach(() => {
-    project = createTempProject();
-    outSpy = vi.spyOn(process.stdout, "write").mockReturnValue(true);
-    errSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
-  });
-  afterEach(() => {
-    outSpy.mockRestore();
-    errSpy.mockRestore();
-    project.cleanup();
-  });
-
-  it("runs the diff command and returns exit code 0", async () => {
-    project.makeLocale("English", { strings: { "translation_strings.json": { k: "V" } } });
-    project.makeLocale("French");
-    const reports = path.join(project.root, "..", "reports");
-    const { exitCode } = await main(["diff", "--lang", "French"], {
-      deps: fakeDeps(),
-      settings: new AppSettings({ projectRoot: project.root, sourceLocale: "English" }),
-      reportsRoot: reports,
+  it("reports an unknown choice and keeps the loop alive", async () => {
+    project.makeLocale("English");
+    const choices = seq(99, 0);
+    const errors: string[] = [];
+    const app = makeApp({
+      askChoice: () => Promise.resolve(choices()),
+      error: (m) => errors.push(m),
     });
-    expect(exitCode).toBe(0);
+    await app.runInteractive();
+    expect(errors.join()).toContain("Invalid choice.");
   });
 
-  it("returns exit code 2 for a bogus subcommand", async () => {
-    const { exitCode } = await main(["bogus"], { deps: fakeDeps() });
-    expect(exitCode).toBe(2);
-  });
-
-  it("falls through to the interactive TUI when no command is given", async () => {
-    let called = false;
-    const deps = fakeDeps({
-      askChoice: () => Promise.resolve(0), // [0] Exit immediately
-      info: () => {
-        called = true;
+  it("says goodbye when the main menu is cancelled", async () => {
+    project.makeLocale("English");
+    let farewelled = false;
+    const app = makeApp({
+      askChoice: () => Promise.resolve(MENU_CANCELLED),
+      farewell: () => {
+        farewelled = true;
       },
     });
-    const { exitCode } = await main([], { deps });
-    expect(exitCode).toBe(0);
-    expect(called).toBe(true);
+    await app.runInteractive();
+    expect(farewelled).toBe(true);
+  });
+});
+
+describe("startup status", () => {
+  it("warns on an invalid project root", async () => {
+    const warnings: string[] = [];
+    const app = makeApp(
+      { askChoice: () => Promise.resolve(0), warn: (m) => warnings.push(m) },
+      new AppSettings({
+        projectRoot: path.join(project.root, "nope"),
+        sourceLocale: "English",
+        showBanner: false,
+      }),
+    );
+    await app.runInteractive();
+    expect(warnings.join()).toContain("does not exist");
+  });
+
+  it("warns on an invalid source locale", async () => {
+    project.makeLocale("English");
+    const warnings: string[] = [];
+    const app = makeApp(
+      { askChoice: () => Promise.resolve(0), warn: (m) => warnings.push(m) },
+      new AppSettings({
+        projectRoot: project.root,
+        sourceLocale: "Klingon",
+        showBanner: false,
+      }),
+    );
+    await app.runInteractive();
+    expect(warnings.join()).toContain("Klingon");
+  });
+
+  it("renders the banner when enabled", async () => {
+    project.makeLocale("English");
+    let rendered = false;
+    const app = makeApp(
+      {
+        askChoice: () => Promise.resolve(0),
+        renderTitle: () => {
+          rendered = true;
+        },
+      },
+      new AppSettings({ projectRoot: project.root, sourceLocale: "English", showBanner: true }),
+    );
+    await app.runInteractive();
+    expect(rendered).toBe(true);
   });
 });

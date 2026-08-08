@@ -1,6 +1,7 @@
-import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { isDirectory } from "./core/fs";
 
 export const PROJECT_DIR_NAME = "PvZ_Fusion_Translator";
 export const SOURCE_LOCALE = "English";
@@ -8,10 +9,6 @@ export const SOURCE_LOCALE = "English";
 const PACKAGE_DIR = path.dirname(fileURLToPath(import.meta.url));
 /** Package root — parent of `src/` (dev) or `dist/` (built). */
 export const REPO_ROOT = path.resolve(PACKAGE_DIR, "..");
-
-function isDir(p: string): boolean {
-  return existsSync(p) && statSync(p).isDirectory();
-}
 
 /**
  * Look for `PvZ_Fusion_Translator/` in this order:
@@ -34,7 +31,7 @@ function discoverProjectRoot(): string {
     path.resolve(cwd, "..", PROJECT_DIR_NAME),
   ];
   for (const candidate of candidates) {
-    if (isDir(candidate)) return candidate;
+    if (isDirectory(candidate)) return candidate;
   }
   return canonical;
 }

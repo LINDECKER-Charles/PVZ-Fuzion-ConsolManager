@@ -1,6 +1,6 @@
 /** Executable entry point. The shebang is injected by the tsup bundler. */
 
-import { main } from "./cli/app";
+import { main } from "./cli/main";
 
 main()
   .then(({ exitCode }) => {

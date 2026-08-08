@@ -23,25 +23,28 @@ function isFile(p: string): boolean {
   return existsSync(p) && statSync(p).isFile();
 }
 
+const request = { locale: "French", label: "lbl", source: "English" };
+
 describe("exportTrello", () => {
   it("writes CSVs and a README", () => {
     project.makeLocale("English", { strings: { "translation_strings.json": { k1: "Hello" } } });
     project.makeLocale("French");
-    const out = exportTrello("French", exportsDir, project.root, "lbl", "English");
+    const out = exportTrello({ ...request, root: project.root, exportsRoot: exportsDir });
     expect(isFile(out.readmePath)).toBe(true);
     expect(out.totalCards).toBeGreaterThanOrEqual(1);
-    expect(Object.keys(out.csvPaths).length).toBeGreaterThan(0);
-    for (const p of Object.values(out.csvPaths)) {
-      expect(isFile(p)).toBe(true);
+    expect(out.lists.length).toBeGreaterThan(0);
+    for (const list of out.lists) {
+      expect(isFile(list.csvPath)).toBe(true);
+      expect(list.cardCount).toBeGreaterThan(0);
     }
   });
 
   it("handles a fully translated locale", () => {
     project.makeLocale("English", { strings: { "translation_strings.json": { k: "v" } } });
     project.makeLocale("French", { strings: { "translation_strings.json": { k: "v-fr" } } });
-    const out = exportTrello("French", exportsDir, project.root, "lbl", "English");
+    const out = exportTrello({ ...request, root: project.root, exportsRoot: exportsDir });
     expect(out.totalCards).toBe(0);
-    expect(out.csvPaths).toEqual({});
+    expect(out.lists).toEqual([]);
     expect(isFile(out.readmePath)).toBe(true);
   });
 
@@ -64,8 +67,9 @@ describe("exportTrello", () => {
       },
     });
 
-    const travelCards = collectCards(project.root, "French", "lbl", "English")
-      .filter((card) => card.listName === "Travel Buffs");
+    const travelCards = collectCards({ ...request, root: project.root }).filter(
+      (card) => card.listName === "Travel Buffs",
+    );
     expect(travelCards).toHaveLength(1);
     expect(travelCards[0].name).toBe("Missing");
     expect(travelCards[0].description).toContain("Missing description");

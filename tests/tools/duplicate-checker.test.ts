@@ -8,8 +8,10 @@ import {
   checkLocaleDuplicates,
   detectRawDuplicateKeys,
   detectValueDuplicates,
-  flattenNested,
+  hasDuplicates,
   scanFile,
+  totalDuplicateKeys,
+  totalDuplicateValues,
 } from "../../src/tools/duplicate-checker";
 import { createTempProject, type TempProject } from "../helpers";
 
@@ -76,23 +78,6 @@ describe("detectRawDuplicateKeys", () => {
   });
 });
 
-describe("flattenNested", () => {
-  it("collapses two levels", () => {
-    expect(flattenNested({ cat: { a: "1", b: "2" } })).toEqual({ "cat:a": "1", "cat:b": "2" });
-  });
-
-  it("collapses the current three-level format", () => {
-    expect(flattenNested({ cat: { "0": { name: "V", desc: "V" } } })).toEqual({
-      "cat:0:name": "V",
-      "cat:0:desc": "V",
-    });
-  });
-
-  it("skips non-dict top-level values", () => {
-    expect(flattenNested({ cat: { a: "1" }, stray: "scalar" })).toEqual({ "cat:a": "1" });
-  });
-});
-
 describe("checkLocaleDuplicates", () => {
   it("reports per file for flat and nested", () => {
     project = createTempProject();
@@ -103,16 +88,14 @@ describe("checkLocaleDuplicates", () => {
       },
     });
     const result = checkLocaleDuplicates(project.root, "French");
-    const byName = new Map(result.files.map((f) => [f.filename, f]));
+    const byName = new Map(result.files.map((file) => [file.filename, file]));
     expect(byName.get("translation_strings.json")!.duplicateValues).toEqual([["Hi", ["a", "b"]]]);
-    expect(byName.get("travel_buffs.json")!.duplicateValues).toEqual([["V", ["cat1:k1", "cat1:k2"]]]);
+    expect(byName.get("travel_buffs.json")!.duplicateValues).toEqual([
+      ["V", ["cat1:k1", "cat1:k2"]],
+    ]);
 
-    const hasAny = result.files.some(
-      (f) => f.duplicateKeys.length > 0 || f.duplicateValues.length > 0,
-    );
-    const totalValues = result.files.reduce((acc, f) => acc + f.duplicateValues.length, 0);
-    expect(hasAny).toBe(true);
-    expect(totalValues).toBe(2);
+    expect(result.files.some(hasDuplicates)).toBe(true);
+    expect(totalDuplicateValues(result)).toBe(2);
   });
 
   it("is clean when there are no duplicates", () => {
@@ -120,23 +103,29 @@ describe("checkLocaleDuplicates", () => {
     project.makeLocale("French", { strings: { "translation_strings.json": { a: "1", b: "2" } } });
     const result = checkLocaleDuplicates(project.root, "French");
 
-    const hasAny = result.files.some(
-      (f) => f.duplicateKeys.length > 0 || f.duplicateValues.length > 0,
-    );
-    const totalKeys = result.files.reduce((acc, f) => acc + f.duplicateKeys.length, 0);
-    const totalValues = result.files.reduce((acc, f) => acc + f.duplicateValues.length, 0);
-    expect(hasAny).toBe(false);
-    expect(totalKeys).toBe(0);
-    expect(totalValues).toBe(0);
+    expect(result.files.some(hasDuplicates)).toBe(false);
+    expect(totalDuplicateKeys(result)).toBe(0);
+    expect(totalDuplicateValues(result)).toBe(0);
+  });
+
+  it("flags files that the locale does not have at all", () => {
+    project = createTempProject();
+    project.makeLocale("French", { strings: { "translation_strings.json": { a: "1" } } });
+    const result = checkLocaleDuplicates(project.root, "French");
+    expect(result.files.filter((file) => file.isMissing).length).toBeGreaterThan(0);
   });
 });
 
 describe("scanFile", () => {
   it("handles a top-level list (skips value-duplicate detection)", () => {
-    const p = tmpFile("list.json", "[1, 2, 3]");
-    const fd = scanFile(p, LAYOUT_FLAT);
-    expect(fd.duplicateValues).toEqual([]);
-    expect(fd.duplicateKeys).toEqual([]);
-    expect(fd.missing).toBe(false);
+    const scanned = scanFile(tmpFile("list.json", "[1, 2, 3]"), LAYOUT_FLAT);
+    expect(scanned.duplicateValues).toEqual([]);
+    expect(scanned.duplicateKeys).toEqual([]);
+    expect(scanned.isMissing).toBe(false);
+  });
+
+  it("marks an absent file as missing", () => {
+    const scanned = scanFile(path.join(tmpdir(), "definitely-absent.json"), LAYOUT_FLAT);
+    expect(scanned.isMissing).toBe(true);
   });
 });

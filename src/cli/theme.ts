@@ -1,4 +1,4 @@
-/** ANSI theming singleton — faithful port of `cli/theme.py`. */
+/** ANSI theming singleton shared by the banner, the menus and the app. */
 
 const ANSI_COLORS: Record<string, string> = {
   default: "",
@@ -20,34 +20,15 @@ const ANSI_COLORS: Record<string, string> = {
 const RESET = "\x1b[0m";
 const BOLD = "\x1b[1m";
 
+const DEFAULT_COLOR = "default";
+const DEFAULT_ACCENT = "cyan";
+const DEFAULT_DENSITY = "comfortable";
+
 const DENSITY_BLANK_LINES: Record<string, number> = {
   compact: 0,
   comfortable: 1,
   spacious: 2,
 };
-
-/**
- * Enable ANSI escape code rendering on Windows consoles.
- *
- * The Python implementation called `kernel32.SetConsoleMode` via ctypes to flip
- * on virtual-terminal processing for pre-Win10 shells. Node 20 already enables
- * VT processing on supported Windows builds, so this is a safe no-op there.
- * We keep the function for parity and as a future extension point.
- */
-export function enableAnsiOnWindows(): void {
-  if (process.platform !== "win32") {
-    return;
-  }
-  // Node >= 20 enables VT mode automatically on Windows terminals that support
-  // it; touching the handle is a best-effort, non-fatal hint.
-  try {
-    const stream = process.stdout as NodeJS.WriteStream & { isTTY?: boolean };
-    // No public stable API to set the console mode; rely on Node's defaults.
-    void stream.isTTY;
-  } catch {
-    // ignore — rendering ANSI is best-effort.
-  }
-}
 
 export interface ThemeConfigureOptions {
   color?: string;
@@ -58,51 +39,68 @@ export interface ThemeConfigureOptions {
 }
 
 export class Theme {
-  color = "default";
-  accent = "cyan";
-  density = "comfortable";
+  color = DEFAULT_COLOR;
+  accent = DEFAULT_ACCENT;
+  density = DEFAULT_DENSITY;
   showEmoji = true;
   showBanner = true;
 
   configure({
-    color = "default",
-    accent = "cyan",
-    density = "comfortable",
+    color = DEFAULT_COLOR,
+    accent = DEFAULT_ACCENT,
+    density = DEFAULT_DENSITY,
     showEmoji = true,
     showBanner = true,
   }: ThemeConfigureOptions = {}): void {
-    this.color = color in ANSI_COLORS ? color : "default";
-    this.accent = accent in ANSI_COLORS ? accent : "cyan";
-    this.density = density in DENSITY_BLANK_LINES ? density : "comfortable";
-    this.showEmoji = Boolean(showEmoji);
-    this.showBanner = Boolean(showBanner);
+    this.color = color in ANSI_COLORS ? color : DEFAULT_COLOR;
+    this.accent = accent in ANSI_COLORS ? accent : DEFAULT_ACCENT;
+    this.density = density in DENSITY_BLANK_LINES ? density : DEFAULT_DENSITY;
+    this.showEmoji = showEmoji;
+    this.showBanner = showBanner;
   }
 
-  colorize(text: string, color: string, bold = false): string {
-    const code = ANSI_COLORS[color] ?? "";
-    if (!code && !bold) {
-      return text;
-    }
-    const prefix = (bold ? BOLD : "") + code;
-    return `${prefix}${text}${RESET}`;
+  /** Body text, in the configured primary colour. */
+  primary(text: string): string {
+    return colorize(text, this.color);
   }
 
-  primary(text: string, bold = false): string {
-    return this.colorize(text, this.color, bold);
+  /** Emphasised text, in the configured accent colour. */
+  accented(text: string): string {
+    return colorize(text, this.accent);
   }
 
-  accented(text: string, bold = false): string {
-    return this.colorize(text, this.accent, bold);
+  /** A title: accent colour, bold. */
+  heading(text: string): string {
+    return colorize(text, this.accent, BOLD);
   }
 
+  /** `symbol` when emoji are enabled, `fallback` otherwise. */
   emoji(symbol: string, fallback = ""): string {
     return this.showEmoji ? symbol : fallback;
   }
 
+  /** Marker for a check that passed. */
+  get okBadge(): string {
+    return this.emoji("✅", "[OK]");
+  }
+
+  /** Marker for a check that failed. */
+  get koBadge(): string {
+    return this.emoji("❌", "[X]");
+  }
+
   get blankLines(): number {
-    return DENSITY_BLANK_LINES[this.density] ?? 1;
+    return DENSITY_BLANK_LINES[this.density] ?? DENSITY_BLANK_LINES[DEFAULT_DENSITY];
   }
 }
 
-/** Module-level singleton — imported by menus and app. */
+function colorize(text: string, color: string, weight = ""): string {
+  const code = ANSI_COLORS[color] ?? "";
+  if (!code && !weight) {
+    return text;
+  }
+  return `${weight}${code}${text}${RESET}`;
+}
+
+/** Module-level singleton — imported by the banner, the menus and the app. */
 export const THEME = new Theme();

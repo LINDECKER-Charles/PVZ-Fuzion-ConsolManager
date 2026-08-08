@@ -4,7 +4,11 @@ import path from "node:path";
 
 /** Mirrors the pytest `conftest.py` fixtures for Vitest. */
 
-export function writeJson(filePath: string, data: unknown, encoding: BufferEncoding = "utf-8"): void {
+export function writeJson(
+  filePath: string,
+  data: unknown,
+  encoding: BufferEncoding = "utf-8",
+): void {
   mkdirSync(path.dirname(filePath), { recursive: true });
   writeFileSync(filePath, JSON.stringify(data, null, 2), { encoding });
 }

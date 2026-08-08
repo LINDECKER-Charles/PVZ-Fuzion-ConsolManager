@@ -1,11 +1,25 @@
-/** Trello CSV/README generation — faithful port of `reporting/trello_csv.py`. */
+/** Trello CSV + import README generation. */
 
-import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import type { TrelloCard } from "../core/models";
 
 export const CSV_HEADER = ["Name", "Description", "Labels", "List"] as const;
+
+/** One written CSV: which Trello list it feeds, where it is, how many cards. */
+export interface TrelloListSummary {
+  name: string;
+  csvPath: string;
+  cardCount: number;
+}
+
+export interface TrelloReadmeOptions {
+  locale: string;
+  label: string;
+  outputPath: string;
+  lists: readonly TrelloListSummary[];
+}
 
 const README_TEMPLATE = `# \u{1f5c2}️ Trello Import — {locale} Missing Translations
 
@@ -59,12 +73,16 @@ Add a per-translator label (e.g. \`assignee:alice\`) as soon as a card is picked
 up — the CSVs stay the single source of truth for what still needs work.
 `;
 
-const SAFE_FILENAME = /[^A-Za-z0-9_]+/g;
+const UNSAFE_FILENAME_CHARS = /[^A-Za-z0-9_]+/g;
+const FALLBACK_LIST_FILENAME = "Other";
+const FALLBACK_FIRST_CSV = "trello_Plants.csv";
+const LIST_COLUMN_WIDTH = 20;
+const FILE_COLUMN_WIDTH = 28;
+const COUNT_COLUMN_WIDTH = 6;
 
 function safeListFilename(listName: string): string {
-  // Mirror Python: re.sub then strip leading/trailing "_".
-  const token = listName.replace(SAFE_FILENAME, "_").replace(/^_+/, "").replace(/_+$/, "");
-  return token || "Other";
+  const token = listName.replace(UNSAFE_FILENAME_CHARS, "_").replace(/^_+|_+$/g, "");
+  return token || FALLBACK_LIST_FILENAME;
 }
 
 /**
@@ -72,182 +90,103 @@ function safeListFilename(listName: string): string {
  * every field is wrapped in double quotes and embedded `"` are doubled.
  */
 function csvField(value: string): string {
-  return '"' + value.replace(/"/g, '""') + '"';
+  return `"${value.replace(/"/g, '""')}"`;
 }
 
-/**
- * Replicate one `csv.writer.writerow(...)` call with `QUOTE_ALL` and
- * `newline=""` open (so the writer's `\r\n` line terminator is preserved).
- */
+/** One `csv.writer.writerow(...)` with `QUOTE_ALL` and a `\r\n` terminator. */
 function csvRow(fields: readonly string[]): string {
-  return fields.map(csvField).join(",") + "\r\n";
+  return `${fields.map(csvField).join(",")}\r\n`;
 }
 
 export function buildTrelloCsv(cards: readonly TrelloCard[], outputPath: string): string {
   mkdirSync(path.dirname(outputPath) || ".", { recursive: true });
-  let content = csvRow(CSV_HEADER);
-  for (const card of cards) {
-    content += csvRow([card.name, card.description, card.labels, card.listName]);
-  }
-  writeFileSync(outputPath, content, { encoding: "utf-8" });
+  const rows = cards.map((card) =>
+    csvRow([card.name, card.description, card.labels, card.listName]),
+  );
+  writeFileSync(outputPath, csvRow(CSV_HEADER) + rows.join(""), { encoding: "utf-8" });
   return outputPath;
+}
+
+function groupByList(cards: readonly TrelloCard[]): Map<string, TrelloCard[]> {
+  const grouped = new Map<string, TrelloCard[]>();
+  for (const card of cards) {
+    const group = grouped.get(card.listName);
+    if (group) group.push(card);
+    else grouped.set(card.listName, [card]);
+  }
+  return grouped;
 }
 
 /**
  * Group `cards` by `listName` and write one CSV per group.
  *
- * Returns a mapping `{listName: csvPath}` for the files that were created.
- * Empty groups produce no file.
+ * Empty groups produce no file, so the returned summaries describe exactly the
+ * CSVs that exist on disk.
  */
 export function writeTrelloCsvsByList(
   cards: readonly TrelloCard[],
   outputDir: string,
   filenamePrefix = "trello_",
-): Record<string, string> {
-  const grouped = new Map<string, TrelloCard[]>();
-  for (const card of cards) {
-    let group = grouped.get(card.listName);
-    if (group === undefined) {
-      group = [];
-      grouped.set(card.listName, group);
-    }
-    group.push(card);
-  }
-
-  const paths: Record<string, string> = {};
-  for (const [listName, group] of grouped) {
-    const filename = `${filenamePrefix}${safeListFilename(listName)}.csv`;
-    const filePath = path.join(outputDir, filename);
-    buildTrelloCsv(group, filePath);
-    paths[listName] = filePath;
-  }
-  return paths;
+): TrelloListSummary[] {
+  return [...groupByList(cards)].map(([name, group]) => {
+    const filename = `${filenamePrefix}${safeListFilename(name)}.csv`;
+    return {
+      name,
+      csvPath: buildTrelloCsv(group, path.join(outputDir, filename)),
+      cardCount: group.length,
+    };
+  });
 }
 
 /** Left-justify to `width` columns (Python `{:<width}`). */
 function ljust(text: string, width: number): string {
-  return text.length >= width ? text : text + " ".repeat(width - text.length);
+  return text.padEnd(width);
 }
 
 /** Right-justify to `width` columns (Python `{:>width}`). */
 function rjust(text: string, width: number): string {
-  return text.length >= width ? text : " ".repeat(width - text.length) + text;
+  return text.padStart(width);
 }
 
-export function buildTrelloReadme(
-  locale: string,
-  csvPathsByList: Record<string, string>,
-  label: string,
-  outputPath: string,
-): string {
+function renderStatsTable(lists: readonly TrelloListSummary[]): string {
+  const rows = lists
+    .map(
+      (list) =>
+        `| ${ljust(list.name, LIST_COLUMN_WIDTH)} ` +
+        `| ${ljust(path.basename(list.csvPath), FILE_COLUMN_WIDTH)} ` +
+        `| ${rjust(String(list.cardCount), COUNT_COLUMN_WIDTH)} |`,
+    )
+    .join("\n");
+  const total = lists.reduce((sum, list) => sum + list.cardCount, 0);
+  return (
+    "| List                 | CSV file                     | Cards  |\n" +
+    "| -------------------- | ---------------------------- | ------ |\n" +
+    `${rows}\n` +
+    `| ${ljust("**Total**", LIST_COLUMN_WIDTH)} |                              | **${total}** |`
+  );
+}
+
+export function buildTrelloReadme(options: TrelloReadmeOptions): string {
+  const { locale, label, outputPath, lists } = options;
   mkdirSync(path.dirname(outputPath) || ".", { recursive: true });
 
-  const entries = Object.entries(csvPathsByList);
-  let statsTable: string;
-  let firstCsv: string;
-  let listsToCreate: string;
-
-  if (entries.length > 0) {
-    const rows = entries
-      .map(
-        ([name, p]) =>
-          `| ${ljust(name, 20)} | ${ljust(path.basename(p), 28)} | ${rjust(String(countRows(p)), 6)} |`,
-      )
-      .join("\n");
-    const total = entries.reduce((sum, [, p]) => sum + countRows(p), 0);
-    statsTable =
-      "| List                 | CSV file                     | Cards  |\n" +
-      "| -------------------- | ---------------------------- | ------ |\n" +
-      `${rows}\n` +
-      `| ${ljust("**Total**", 20)} |                              | **${total}** |`;
-    const first = entries[0]!;
-    firstCsv = path.basename(first[1]);
-    listsToCreate = entries.map(([name]) => `   - \`${name}\``).join("\n");
-  } else {
-    statsTable = "_Nothing to import — the target locale looks fully translated._";
-    firstCsv = "trello_Plants.csv";
-    listsToCreate = "   _(no lists required — export is empty)_";
-  }
-
+  const isEmpty = lists.length === 0;
   const body = README_TEMPLATE.replace(/\{locale\}/g, locale)
     .replace(/\{label\}/g, label)
-    .replace(/\{first_csv\}/g, firstCsv)
-    .replace(/\{stats_table\}/g, statsTable)
-    .replace(/\{lists_to_create\}/g, listsToCreate);
+    .replace(/\{first_csv\}/g, isEmpty ? FALLBACK_FIRST_CSV : path.basename(lists[0].csvPath))
+    .replace(
+      /\{stats_table\}/g,
+      isEmpty
+        ? "_Nothing to import — the target locale looks fully translated._"
+        : renderStatsTable(lists),
+    )
+    .replace(
+      /\{lists_to_create\}/g,
+      isEmpty
+        ? "   _(no lists required — export is empty)_"
+        : lists.map((list) => `   - \`${list.name}\``).join("\n"),
+    );
 
   writeFileSync(outputPath, body, { encoding: "utf-8" });
   return outputPath;
-}
-
-/**
- * Count data rows in a CSV (excluding the header), mirroring Python's
- * `csv.reader` row count minus one.
- */
-function countRows(csvPath: string): number {
-  const content = readFileSync(csvPath, { encoding: "utf-8" });
-  // csv.reader yields one record per CSV row. With QUOTE_ALL output and no
-  // embedded newlines inside fields, each record is one `\r\n`-terminated line.
-  const records = parseCsvRecords(content);
-  return Math.max(0, records.length - 1);
-}
-
-/**
- * Minimal RFC-4180 record counter compatible with the output of `buildTrelloCsv`.
- * Handles quoted fields containing `,`, `\r`, `\n` and doubled `""`.
- */
-function parseCsvRecords(content: string): string[][] {
-  const records: string[][] = [];
-  let field = "";
-  let record: string[] = [];
-  let inQuotes = false;
-  let started = false;
-
-  const pushField = (): void => {
-    record.push(field);
-    field = "";
-  };
-  const pushRecord = (): void => {
-    pushField();
-    records.push(record);
-    record = [];
-    started = false;
-  };
-
-  for (let i = 0; i < content.length; i++) {
-    const ch = content[i]!;
-    if (inQuotes) {
-      if (ch === '"') {
-        if (content[i + 1] === '"') {
-          field += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        field += ch;
-      }
-      continue;
-    }
-    if (ch === '"') {
-      inQuotes = true;
-      started = true;
-    } else if (ch === ",") {
-      pushField();
-      started = true;
-    } else if (ch === "\r") {
-      if (content[i + 1] === "\n") {
-        i++;
-      }
-      pushRecord();
-    } else if (ch === "\n") {
-      pushRecord();
-    } else {
-      field += ch;
-      started = true;
-    }
-  }
-  if (started || field.length > 0 || record.length > 0) {
-    pushRecord();
-  }
-  return records;
 }
