@@ -11,10 +11,18 @@ exports/
 settings.json
 coverage/
 docs
+docs/reports/
 graphify-out
+CLAUDE.md
 
 npm-debug.log*
 yarn-error.log*
+
+# Leftovers from the pre-TypeScript Python implementation.
+.venv/
+venv/
+__pycache__/
+*.pyc
 
 release.md
 *.tgz
