@@ -1,6 +1,6 @@
 {
   "name": "@charles_lindecker/pvzf-console",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Translation toolkit for Plants vs Zombies: Fusion. Scans localization files, generates per-locale reports, exports Trello CSVs, and turns the weekly PR recap into contributor documentation.",
   "keywords": [
     "pvz",
