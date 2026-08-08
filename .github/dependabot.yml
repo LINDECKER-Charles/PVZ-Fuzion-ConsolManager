@@ -34,11 +34,22 @@ updates:
       semver-minor-days: 14
       semver-major-days: 30
 
+    # `typescript` is capped for now: `typescript-eslint` 8.66.0, the latest
+    # release, peers `typescript >=4.8.4 <6.1.0`, so TypeScript 7 makes `npm ci`
+    # fail with ERESOLVE before a single test runs — that is what closed #18.
+    # The project's own sources already compile clean under 7.0.2, so this is a
+    # toolchain wait, not a migration. Drop the entry once typescript-eslint
+    # widens its peer range.
+    ignore:
+      - dependency-name: "typescript"
+        versions: ["7.x"]
+
     # Every group below covers all update types, majors included. Splitting a
     # lockstep pair across two PRs is what produced the `vitest ^2` +
-    # `@vitest/coverage-v8 ^4` tree that had to be repaired by hand in 3026f97.
-    # `exclude-patterns` on the catch-all keeps membership deterministic instead
-    # of relying on group evaluation order.
+    # `@vitest/coverage-v8 ^4` tree that had to be repaired by hand in 3026f97,
+    # and what sent `typescript` into #18 on its own while the plugin that peers
+    # on it stayed behind. `exclude-patterns` on the catch-all keeps membership
+    # deterministic instead of relying on group evaluation order.
     groups:
       # First, so the two packages that ship to users never get folded into a
       # dev-tooling pull request. A dependency matches the first group it
@@ -49,18 +60,21 @@ updates:
         patterns:
           - "vitest"
           - "@vitest/*"
+      # `typescript-eslint` declares a peer range on `typescript`: bumping one
+      # without the other is unresolvable, so they travel in the same pull
+      # request. Same reasoning as the vitest pair above.
+      typescript:
+        patterns:
+          - "typescript"
+          - "@types/*"
+          - "typescript-eslint"
+          - "@typescript-eslint/*"
       eslint:
         patterns:
           - "eslint"
           - "eslint-*"
           - "@eslint/*"
-          - "typescript-eslint"
-          - "@typescript-eslint/*"
           - "globals"
-      typescript:
-        patterns:
-          - "typescript"
-          - "@types/*"
       build-tooling:
         patterns:
           - "tsup"
