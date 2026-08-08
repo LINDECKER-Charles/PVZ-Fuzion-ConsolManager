@@ -240,6 +240,26 @@ describe("migrateTipsAndBuffs", () => {
     expect(readFileSync(dest, "utf-8")).toBe(existingContent);
   });
 
+  it("reports sourceMissing when the destination exists but its dump does not", () => {
+    project = createTempProject();
+    const existingContent = '{"preserved": "do not touch"}';
+    project.makeLocale("French", {
+      strings: {
+        "translation_strings.json": { "你好": "Bonjour" },
+        [TIPS_IZ_FILE]: { preserved: "do not touch" },
+      },
+    });
+    const dest = stringsPath(project.root, "French", TIPS_IZ_FILE);
+    writeFileSync(dest, existingContent, { encoding: "utf-8" });
+    // No dump for tips_iz: the migration cannot get as far as the write, so the
+    // missing source is what it reports — `skippedExists` is now reached only
+    // by the write itself being refused.
+
+    const fr = fileResult(migrateTipsAndBuffs(project.root, "French"), TIPS_IZ_FILE);
+    expect(fr.status).toBe("sourceMissing");
+    expect(readFileSync(dest, "utf-8")).toBe(existingContent);
+  });
+
   it("reports sourceMissing and creates no file when the dump is absent", () => {
     project = createTempProject();
     project.makeLocale("French", {

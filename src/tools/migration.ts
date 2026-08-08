@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { isObjectLike, isRecord } from "../core/guards";
+import { isFileAlreadyExists, isObjectLike, isRecord } from "../core/guards";
 import { DUMPS_DIRNAME, loadJson, stringsDir } from "../parsers/loaders";
 import {
   ABYSS_BUFFS_FILE,
@@ -199,10 +199,6 @@ function migrateTarget(
   translationStrings: Record<string, string>,
 ): FileMigrationResult {
   const destPath = path.join(destDir, target.filename);
-  if (existsSync(destPath)) {
-    return skipped(target.filename, "skippedExists");
-  }
-
   const entries = target.extract();
   if (entries === null) {
     return skipped(target.filename, "sourceMissing");
@@ -210,7 +206,21 @@ function migrateTarget(
 
   const { tree, migrated } = buildTree(entries, translationStrings);
   mkdirSync(destDir, { recursive: true });
-  writeFileSync(destPath, BOM + JSON.stringify(tree, null, JSON_INDENT), { encoding: "utf-8" });
+  try {
+    // `wx` makes "does it already exist?" and "write it" a single syscall.
+    // Testing first and writing after left a window in which a translator
+    // saving from an editor could have their file silently overwritten — this
+    // migration must never clobber existing work.
+    writeFileSync(destPath, BOM + JSON.stringify(tree, null, JSON_INDENT), {
+      encoding: "utf-8",
+      flag: "wx",
+    });
+  } catch (error) {
+    if (isFileAlreadyExists(error)) {
+      return skipped(target.filename, "skippedExists");
+    }
+    throw error;
+  }
   return { filename: target.filename, status: "created", migrated, available: entries.length };
 }
 

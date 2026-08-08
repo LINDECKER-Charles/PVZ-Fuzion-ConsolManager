@@ -13,11 +13,20 @@ export function isObjectLike(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-/** Whether a caught value is the "file does not exist" errno. */
-export function isFileNotFound(error: unknown): boolean {
+function hasErrnoCode(error: unknown, code: string): boolean {
   return (
     typeof error === "object" &&
     error !== null &&
-    (error as NodeJS.ErrnoException).code === "ENOENT"
+    (error as NodeJS.ErrnoException).code === code
   );
+}
+
+/** Whether a caught value is the "file does not exist" errno. */
+export function isFileNotFound(error: unknown): boolean {
+  return hasErrnoCode(error, "ENOENT");
+}
+
+/** Whether a caught value is the "file already exists" errno — an `wx` refusal. */
+export function isFileAlreadyExists(error: unknown): boolean {
+  return hasErrnoCode(error, "EEXIST");
 }
