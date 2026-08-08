@@ -1,10 +1,15 @@
 version: 2
 
-# Threat model: the published package has zero runtime dependencies and ships a
-# single bundled `dist/cli.js`, so this tree never reaches end users. What it
-# does reach is CI and maintainer machines, via `npm ci` and install scripts —
-# so the risk being managed here is a compromised release of a dev dependency,
-# not a CVE in something users run.
+# Threat model, in two halves since 1.6.0.
+#
+# Runtime dependencies (`@clack/prompts`, `picocolors`) are installed on every
+# end user's machine alongside the CLI: a compromised release there is shipped
+# breakage, and it is reviewed on its own.
+#
+# Everything else reaches CI and maintainer machines only, through `npm ci` and
+# install scripts — the bundled `dist/cli.js` carries none of it. The risk being
+# managed for that half is a hijacked release of a build tool, not a CVE in
+# something users run.
 #
 # Hence the cadence below: monthly version updates behind a cooldown, because a
 # hijacked release is almost always yanked within days of publication. Security
@@ -35,6 +40,11 @@ updates:
     # `exclude-patterns` on the catch-all keeps membership deterministic instead
     # of relying on group evaluation order.
     groups:
+      # First, so the two packages that ship to users never get folded into a
+      # dev-tooling pull request. A dependency matches the first group it
+      # qualifies for.
+      runtime:
+        dependency-type: production
       vitest:
         patterns:
           - "vitest"
@@ -57,6 +67,7 @@ updates:
           - "tsx"
           - "esbuild"
       other-dev:
+        dependency-type: development
         patterns:
           - "*"
         exclude-patterns:
