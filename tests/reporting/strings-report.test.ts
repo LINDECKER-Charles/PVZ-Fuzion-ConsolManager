@@ -73,6 +73,17 @@ describe("flat reports", () => {
     expect(body).toContain("line1 ⏎ line2");
   });
 
+  it("escapes backslashes so a literal \\| cannot split the row", () => {
+    const reports = makeTmp();
+    const body = readFileSync(
+      buildStringsReport([empty(String.raw`a\|b`, String.raw`c\d`)], "French", reports)!,
+      "utf-8",
+    );
+    // Escaped backslash, then escaped pipe — the cell stays one cell.
+    expect(body).toContain(String.raw`a\\\|b`);
+    expect(body).toContain(String.raw`c\\d`);
+  });
+
   it("gives each category its own file", () => {
     const reports = makeTmp();
     const entries = [missing("K", "V")];

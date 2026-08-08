@@ -42,10 +42,20 @@ export function localizationLine(localization: string): string {
   return `> **Localization:** \`${localization.toUpperCase()}\`  \n`;
 }
 
-/** Escape a value so it survives inside a Markdown table cell. */
+/**
+ * Escape a value so it survives inside a Markdown table cell.
+ *
+ * Backslashes go first: escaping them after the pipes would turn the `\|` this
+ * function just produced back into an escaped backslash followed by a live cell
+ * separator, so a translation containing `\|` would break the table it sits in.
+ */
 export function markdownCell(text: string | null): string {
   if (text === null) {
     return "";
   }
-  return text.replace(/\|/g, "\\|").replace(/\r/g, "").replace(/\n/g, " ⏎ ");
+  return text
+    .replace(/\\/g, "\\\\")
+    .replace(/\|/g, "\\|")
+    .replace(/\r/g, "")
+    .replace(/\n/g, " ⏎ ");
 }
