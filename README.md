@@ -32,6 +32,8 @@ contributor documentation.
 [![locales](https://img.shields.io/badge/locales-19-2ea44f)](docs/catalog.md)
 [![translation types](https://img.shields.io/badge/translation%20types-8-2ea44f)](docs/catalog.md)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-2-2ea44f)](package.json)
+[![sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-EA4AAA?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/LINDECKER-Charles)
+[![ko-fi](https://img.shields.io/badge/ko--fi-buy%20me%20a%20coffee-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/charleslindecker)
 [![stars](https://img.shields.io/github/stars/LINDECKER-Charles/PVZ-Fuzion-ConsolManager?style=social)](https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/stargazers)
 
 </div>
@@ -153,6 +155,18 @@ privately — [SECURITY.md](SECURITY.md) has the channels and the response targe
 Issues and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers the dev loop
 (`npm run dev`, `npm test`, `npm run typecheck`), the enforced size and complexity limits, and
 the four-step drill for adding a new translation category.
+
+## Support
+
+The console is free, MIT-licensed and maintained on personal time. If it saved you an
+evening of hand-diffing locale files, you can give something back:
+
+- [**GitHub Sponsors**](https://github.com/sponsors/LINDECKER-Charles) — also reachable from
+  the *Sponsor* button at the top of this page.
+- [**Ko-fi**](https://ko-fi.com/charleslindecker) — one-off, no account needed.
+
+Starring the repository, filing a precise bug report or sending a locale fix helps just as
+much, and costs nothing.
 
 ## Credits
 

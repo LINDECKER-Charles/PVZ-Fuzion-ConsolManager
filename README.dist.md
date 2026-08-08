@@ -260,6 +260,18 @@ every supported file and every generated artifact.
 
 ---
 
+## 💛 Support
+
+Free, MIT-licensed, maintained on personal time. If the console saved you a few
+hours of manual diffing, you can give something back:
+
+- **GitHub Sponsors** — <https://github.com/sponsors/LINDECKER-Charles>
+- **Ko-fi** — <https://ko-fi.com/charleslindecker>
+
+A star on the repository or a precise bug report helps just as much.
+
+---
+
 ## 👤 Author
 
 **Charles Lindecker**
