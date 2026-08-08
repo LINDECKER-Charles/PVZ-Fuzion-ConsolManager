@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" width="900" height="470" role="img" aria-label="Layered architecture: entry point, terminal layer, tools, parsers and reporting, pure core">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1520"/>
+      <stop offset="100%" stop-color="#0c1a16"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#22d3ee"/>
+    </marker>
+  </defs>
+  <style>
+    .t  { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .s  { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    .layer { font-size: 13px; fill: #7dd3a0; letter-spacing: 2px; }
+    .mod   { font-size: 13px; fill: #e6edf3; }
+    .note  { font-size: 12px; fill: #8b949e; }
+    .title { font-size: 15px; fill: #adbac7; letter-spacing: 1px; }
+  </style>
+
+  <rect x="1" y="1" width="898" height="468" rx="14" fill="url(#bg)" stroke="#2b3b47" stroke-width="1.5"/>
+  <text class="s title" x="32" y="36">Layers — every import points downward, never up</text>
+
+  <!-- entry -->
+  <rect x="32" y="56" width="770" height="62" rx="10" fill="#12212e" stroke="#3d5568"/>
+  <text class="t layer" x="48" y="82">ENTRY</text>
+  <text class="t mod" x="150" y="80">cli.ts  ·  cli/main.ts  ·  cli/args.ts</text>
+  <text class="s note" x="150" y="100">parse argv, then branch: headless command or interactive session</text>
+
+  <!-- terminal -->
+  <rect x="32" y="132" width="770" height="70" rx="10" fill="#12212e" stroke="#3d5568"/>
+  <text class="t layer" x="48" y="164">TERMINAL</text>
+  <text class="t mod" x="150" y="162">cli/app.ts  ·  cli/screens/*  ·  cli/menus.ts  ·  cli/output.ts  ·  cli/theme.ts</text>
+  <text class="s note" x="150" y="182">prompts, menus, panels and theming — injected as AppDeps, never imported by a lower layer</text>
+
+  <!-- tools -->
+  <rect x="32" y="216" width="770" height="70" rx="10" fill="#122620" stroke="#3f6b4f"/>
+  <text class="t layer" x="48" y="248">TOOLS</text>
+  <text class="t mod" x="150" y="246">tools/scan.ts  ·  tools/migration.ts  ·  tools/trello-export.ts</text>
+  <text class="t mod" x="150" y="266">tools/duplicate-checker.ts  ·  tools/pr-resume/*</text>
+
+  <!-- parsers / reporting -->
+  <rect x="32" y="300" width="376" height="76" rx="10" fill="#122620" stroke="#3f6b4f"/>
+  <text class="t layer" x="48" y="326">PARSERS</text>
+  <text class="t mod" x="48" y="348">parsers/loaders.ts</text>
+  <text class="t mod" x="48" y="366">parsers/almanac.ts · parsers/strings.ts</text>
+
+  <rect x="426" y="300" width="376" height="76" rx="10" fill="#122620" stroke="#3f6b4f"/>
+  <text class="t layer" x="442" y="326">REPORTING</text>
+  <text class="t mod" x="442" y="348">reporting/output.ts · *-report.ts</text>
+  <text class="t mod" x="442" y="366">reporting/diff-json.ts · trello-csv.ts</text>
+
+  <!-- core -->
+  <rect x="32" y="390" width="770" height="62" rx="10" fill="#141d26" stroke="#4a6d80"/>
+  <text class="t layer" x="48" y="416">CORE</text>
+  <text class="t mod" x="150" y="414">models.ts · diff.ts · json-scanner.ts · guards.ts · text.ts · fs.ts</text>
+  <text class="s note" x="150" y="434">pure data and comparison logic — no filesystem, no prompts, no process</text>
+
+  <!-- direction rail -->
+  <line x1="838" y1="70" x2="838" y2="440" stroke="#22d3ee" stroke-width="2" marker-end="url(#arrow)" opacity="0.8"/>
+  <text class="s note" x="852" y="270" transform="rotate(90 852 270)" text-anchor="middle">depends on</text>
+</svg>

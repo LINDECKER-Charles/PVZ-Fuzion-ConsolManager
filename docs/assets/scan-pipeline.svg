@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" width="900" height="320" role="img" aria-label="Scan pipeline: source and target are loaded, diffed, then written as reports and JSON diffs">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1520"/>
+      <stop offset="100%" stop-color="#0c1a16"/>
+    </linearGradient>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#57c766"/>
+    </marker>
+  </defs>
+  <style>
+    .t { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; fill: #e6edf3; }
+    .h { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; fill: #7dd3a0; letter-spacing: 1.6px; }
+    .n { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11.5px; fill: #8b949e; }
+    .title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; fill: #adbac7; letter-spacing: 1px; }
+    .box { fill: #12212e; stroke: #3d5568; }
+    .boxg { fill: #122620; stroke: #3f6b4f; }
+  </style>
+
+  <rect x="1" y="1" width="898" height="318" rx="14" fill="url(#bg2)" stroke="#2b3b47" stroke-width="1.5"/>
+  <text class="title" x="32" y="36">One scan, for one locale, for one category</text>
+
+  <!-- inputs -->
+  <rect class="box" x="32" y="60" width="200" height="72" rx="10"/>
+  <text class="h" x="48" y="84">SOURCE</text>
+  <text class="t" x="48" y="104">Localization/English/</text>
+  <text class="n" x="48" y="122">or Dumps/ — configurable</text>
+
+  <rect class="box" x="32" y="152" width="200" height="72" rx="10"/>
+  <text class="h" x="48" y="176">TARGET</text>
+  <text class="t" x="48" y="196">Localization/French/</text>
+  <text class="n" x="48" y="214">the locale being checked</text>
+
+  <!-- load -->
+  <rect class="boxg" x="272" y="96" width="176" height="92" rx="10"/>
+  <text class="h" x="288" y="120">LOAD</text>
+  <text class="t" x="288" y="142">parsers/loaders</text>
+  <text class="t" x="288" y="160">almanac · strings</text>
+  <text class="n" x="288" y="178">bad JSON: notice, not crash</text>
+
+  <!-- diff -->
+  <rect class="boxg" x="488" y="96" width="176" height="92" rx="10"/>
+  <text class="h" x="504" y="120">DIFF</text>
+  <text class="t" x="504" y="142">missingById O(n+m)</text>
+  <text class="t" x="504" y="160">missing + empty values</text>
+  <text class="n" x="504" y="178">travel buffs by category:id</text>
+
+  <!-- outputs -->
+  <rect class="box" x="704" y="60" width="164" height="72" rx="10"/>
+  <text class="h" x="720" y="84">MARKDOWN</text>
+  <text class="t" x="720" y="104">reports/&lt;Locale&gt;/</text>
+  <text class="t" x="720" y="122">missing_*.md</text>
+
+  <rect class="box" x="704" y="152" width="164" height="72" rx="10"/>
+  <text class="h" x="720" y="176">JSON DIFF</text>
+  <text class="t" x="720" y="196">*_diff.json</text>
+  <text class="n" x="720" y="214">opt-in: --with-diff</text>
+
+  <!-- arrows -->
+  <path d="M232 96h20v46h20" stroke="#57c766" stroke-width="2" fill="none" marker-end="url(#a2)"/>
+  <path d="M232 188h20v-46h20" stroke="#57c766" stroke-width="2" fill="none" marker-end="url(#a2)"/>
+  <path d="M448 142h40" stroke="#57c766" stroke-width="2" fill="none" marker-end="url(#a2)"/>
+  <path d="M664 142h20v-46h20" stroke="#57c766" stroke-width="2" fill="none" marker-end="url(#a2)"/>
+  <path d="M664 142h20v46h20" stroke="#57c766" stroke-width="2" fill="none" marker-end="url(#a2)"/>
+
+  <text class="n" x="32" y="270">Nothing to report means nothing on disk: a category with zero findings writes no file at all.</text>
+  <text class="n" x="32" y="292">The same registry backs the console menu, the headless diff command and the Trello export.</text>
+</svg>

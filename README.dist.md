@@ -80,11 +80,13 @@ say yes if you want the missing entries in re-injectable JSON form.
 
 ### [2] Translator tools
 
-**Migrate tips & buffs** — rebuilds `tips_iz.json` / `tips_fs.json` /
-`abyss_buffs.json` / `travel_buffs.json` from the legacy
-`translation_strings.json`. All-or-nothing: if any source tip is missing from
-`translation_strings.json`, the tool refuses to write a half-filled file and
-tells you how many entries are still unmapped.
+**Migrate tips & buffs** — builds `tips_iz.json` / `tips_fs.json` /
+`abyss_buffs.json` / `travel_buffs.json` for a locale that doesn't have them.
+The key set comes from the raw `Dumps/`, and each translation is looked up in
+that locale's own `translation_strings.json`. Entries with no translation yet
+are left out — the result line tells you how many made it
+(`Created tips_iz.json — 128/402 translated`), and a diff afterwards lists the
+rest. An existing file is never overwritten.
 
 **Migrate custom levels** — builds `customlevel_strings` /
 `customlevel_regexs` / `custom_level_data` for a locale: the key set comes from
@@ -252,8 +254,9 @@ Open source on GitHub:
 <https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager>
 
 If you hit a bug or want a new feature, open an issue or a pull request
-there. The repo README explains how to set up a dev environment and how to
-add new translation types.
+there. `CONTRIBUTING.md` explains how to set up a dev environment and how to
+add new translation types, and the `docs/` folder documents the architecture,
+every supported file and every generated artifact.
 
 ---
 

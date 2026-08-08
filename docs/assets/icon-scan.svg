@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Scan">
+  <g fill="none" stroke="#57c766" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="14" cy="14" r="8"/>
+    <path d="M20 20l7 7"/>
+    <path d="M10.5 14h7M14 10.5v7" stroke="#22d3ee"/>
+  </g>
+</svg>

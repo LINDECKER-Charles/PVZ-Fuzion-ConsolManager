@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 230" width="900" height="230" role="img" aria-label="PVZ Fuzion Console Manager - translation toolkit for Plants vs Zombies Fusion">
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1520"/>
+      <stop offset="55%" stop-color="#101b26"/>
+      <stop offset="100%" stop-color="#0c1a16"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3fa14a"/>
+      <stop offset="100%" stop-color="#a7e05a"/>
+    </linearGradient>
+    <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#57c766" stop-opacity="0.9"/>
+      <stop offset="60%" stop-color="#22d3ee" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M30 0H0v30" fill="none" stroke="#7dd3a0" stroke-opacity="0.06" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect x="1" y="1" width="898" height="228" rx="16" fill="url(#panel)" stroke="#2b3b47" stroke-width="1.5"/>
+  <rect x="1" y="1" width="898" height="228" rx="16" fill="url(#grid)"/>
+
+  <!-- sprout mark -->
+  <g transform="translate(60 74)">
+    <path d="M26 62V28" stroke="#57c766" stroke-width="4" stroke-linecap="round"/>
+    <path d="M26 34C26 18 14 8 0 6c0 16 12 26 26 28Z" fill="url(#leaf)" opacity="0.95"/>
+    <path d="M26 40c0-16 12-26 26-28 0 16-12 26-26 28Z" fill="url(#leaf)" opacity="0.75"/>
+    <path d="M8 62h36" stroke="#2b3b47" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="140" y="86" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="34" font-weight="700" fill="#e6edf3" letter-spacing="1.5">PVZF CONSOLE</text>
+  <text x="140" y="114" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="15" fill="#7dd3a0" letter-spacing="3.2">MANAGER</text>
+
+  <rect x="140" y="130" width="700" height="2" fill="url(#rule)"/>
+
+  <text x="140" y="158" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" fill="#adbac7">Translation toolkit for Plants vs Zombies: Fusion.</text>
+  <text x="140" y="180" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" fill="#8b949e">Diff locales, write reports, migrate files, export backlogs, author contributor docs.</text>
+
+  <!-- prompt -->
+  <g transform="translate(140 200)">
+    <text font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="13" fill="#57c766">$</text>
+    <text x="16" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="13" fill="#adbac7">npx @charles_lindecker/pvzf-console</text>
+    <rect x="272" y="-10" width="8" height="13" fill="#22d3ee" opacity="0.85"/>
+  </g>
+</svg>
