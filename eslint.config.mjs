@@ -11,7 +11,22 @@ import globals from "globals";
  *   - typescript-eslint recommended (NON type-checked: keeps lint fast, no
  *     program build; the `npm run typecheck` script covers type-aware checks)
  *   - eslint-plugin-security recommended
+ *   - the numeric limits declared in CLAUDE.md, so "vérifiable" means the
+ *     linter actually verifies them instead of leaving them to review
  */
+
+/** Size and complexity ceilings — mirror of the CLAUDE.md table. */
+const LIMIT_RULES = {
+  "max-lines": ["error", { max: 300, skipBlankLines: false, skipComments: false }],
+  "max-lines-per-function": [
+    "error",
+    { max: 30, skipBlankLines: false, skipComments: false, IIFEs: true },
+  ],
+  "max-params": ["error", 3],
+  "max-depth": ["error", 3],
+  complexity: ["error", 10],
+  "max-len": ["error", { code: 100, ignoreUrls: true }],
+};
 export default tseslint.config(
   {
     ignores: [
@@ -38,6 +53,8 @@ export default tseslint.config(
       },
     },
     rules: {
+      ...LIMIT_RULES,
+
       // Underscore-prefixed args/vars are intentional placeholders (unused
       // interface params, destructuring rest). Standard convention.
       "@typescript-eslint/no-unused-vars": [
@@ -72,6 +89,11 @@ export default tseslint.config(
       // Test doubles/spies legitimately use `any`; existing targeted disables
       // cover the rest. Relax it project-wide for the test tree only.
       "@typescript-eslint/no-explicit-any": "off",
+
+      // A `describe`/`it` callback is a suite declaration, not a unit of logic:
+      // the "one function does one thing" ceiling does not apply to it. File
+      // size, parameters, nesting, complexity and line length still do.
+      "max-lines-per-function": "off",
     },
   },
 );
