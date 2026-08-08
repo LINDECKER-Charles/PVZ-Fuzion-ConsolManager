@@ -2,8 +2,9 @@
 
 > Translation toolkit for **Plants vs Zombies: Fusion**.
 > Scans every locale against the English source, generates per-locale Markdown
-> reports, migrates the new tips format, checks for duplicates, and exports
-> Trello-ready CSV backlogs.
+> reports, migrates the new tips format, checks for duplicates, exports
+> Trello-ready CSV backlogs, and turns the weekly PR recap into contributor
+> documentation.
 
 [![node](https://img.shields.io/badge/node-%E2%89%A520-green)](https://nodejs.org/)
 [![typescript](https://img.shields.io/badge/typescript-strict-blue)](https://www.typescriptlang.org/)
@@ -25,6 +26,7 @@
 - [Build & distribute](#-build--distribute)
 - [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
+- [Security](#-security)
 - [Credits](#-credits)
 - [License](#-license)
 
@@ -44,9 +46,12 @@
    by multiple keys, per locale.
 5. **Exports Trello CSV backlogs** — one CSV per category, ready for the
    *Import to Trello by Blue Cat* Power-Up.
-6. **Ships as a single npm package** (`@charles_lindecker/pvzf-console`) bundled
-   to one file with [tsup](https://tsup.egoist.dev/). No Python, no runtime
-   dependencies — just Node.
+6. **Writes the contributor documentation** — splits the weekly translation-PR
+   recap into one Markdown block per contributor, counters and reviews
+   included, ready to archive.
+7. **Ships as a single npm package** (`@charles_lindecker/pvzf-console`) bundled
+   to one file with [tsup](https://tsup.egoist.dev/). No Python — just Node and
+   two small runtime dependencies (`@clack/prompts`, `picocolors`).
 
 ---
 
@@ -162,20 +167,60 @@ ships alongside it), so the global `bin` works straight after install.
     produced).
   - Full *Import to Trello by Blue Cat* Power-Up walkthrough.
 
+### Contributor documentation (Documentation tab)
+
+- Turns the weekly translation-PR recap into **one Markdown block per
+  contributor**: week header, PR link, counters (*new* / *adjusted* /
+  *reviews*), then the detail of every item they touched.
+- The **lead maintainer's *Reviews* block is derived**, not written: every item
+  authored by someone else is mirrored under the lead, grouped by section then
+  by author. Sections whose name contains `check` are proof-reading passes and
+  are excluded.
+- Counters come from the section names (`new` / `nouveau` / `nouvelle` →
+  *Nouvelles traductions*; `modified` / `modifi` → *Traductions ajustées*).
+- The lead's identity is a **setting**, so any locale maintainer can use the
+  tool: a canonical display name plus the aliases the recap may spell them with
+  (`@LINDECKER-Charles`, `LINDECKER-Charles`, …) are folded into one block.
+- **Nothing is written before you have seen it**: the recap is rendered and its
+  stats shown first, and the file is written only on confirmation.
+- No GitHub API call — the PR URL you pass in is only reinjected into each
+  block's header.
+- Ported from the standalone
+  [`pvzf-make-pr`](https://github.com/LINDECKER-Charles/PVZF-PR-Resume) CLI;
+  output is byte-identical.
+
+### Terminal UI
+
+- Built on [`@clack/prompts`](https://github.com/bombshell-dev/clack): arrow-key
+  menus with hints, type-to-filter locale picker, inline validation, boxed
+  status and result panels.
+- The **locale picker switches to a filterable autocomplete** past ten locales —
+  the game ships more than twenty.
+- `Esc` / `Ctrl+C` leave the current screen instead of killing the process, and
+  never trigger the action they interrupted; the main menu's *Exit* is the way
+  out.
+- Theme still honours the settings (accent color, emoji, banner) and falls back
+  to `[OK] / [!] / [X]` when emoji are off.
+
 ### Persistent settings
 
-- Stored in `settings.json` at the package root (gitignored).
-- Live-editable from `[3] Settings` in the TUI.
+- Stored per user, outside the package — see
+  [Where settings live](#where-settings-live).
+- Live-editable from `[4] Settings` in the TUI.
 - Theme applied immediately (color, accent, density, emoji/banner toggles).
-- On-disk format keeps snake_case keys for backward compatibility, and unknown
-  keys are ignored on load.
+- On-disk format keeps snake_case keys for backward compatibility, unknown keys
+  are ignored on load, and a hand-edited alias list is filtered down to usable
+  strings.
 
 ### CLI
 
 - Hand-rolled sub-command dispatch mirroring an `argparse`-style surface.
 - `pvzf-console diff --lang <locale> [--out <dir>] [--with-diff]` runs every
   diff type for one locale in non-interactive mode.
-- Exit codes: `0` on success, `2` on invalid locale or missing project root.
+- `pvzf-console pr-resume [--input <file>] [--output <file>]` generates the
+  contributor summary headlessly.
+- Exit codes: `0` on success, `1` on a runtime failure (unreadable recap),
+  `2` on invalid arguments, locale or project root.
 
 ### Auto-discovery
 
@@ -198,13 +243,26 @@ ships alongside it), so the global `bin` works straight after install.
 
 ## 🧭 Interactive menu reference
 
+Navigate with `↑` `↓`, confirm with `Enter`, leave a screen with `Esc`.
+
 ```
-  MAIN MENU
-  ─────────
-    [1]  Show what's missing
-    [2]  Translator tools
-    [3]  Settings
-    [0]  Exit
+┌  PVZF CONSOLE
+│
+◇  Status ──────────────────────────────────────────╮
+│                                                   │
+│  ✅  project   …/PvZ_Fusion_Translator            │
+│  ✅  source    English                            │
+│  ✅  reports   reports/                           │
+│                                                   │
+├───────────────────────────────────────────────────╯
+│
+◆  Main menu
+│  ● Show what's missing   diff locales · write reports
+│  ○ Translator tools      migrate · trello · duplicates
+│  ○ Documentation         PR recap → contributor docs
+│  ○ Settings
+│  ○ Exit
+└
 ```
 
 ### [1] Show what's missing
@@ -230,12 +288,67 @@ Answer yes to write `*_diff.json` next to each Markdown report.
 
 | Option | What it does |
 | ------ | ------------ |
-| `[1] Migrate tips` | Rebuilds `tips_iz.json` / `tips_fs.json` from `translation_strings.json`. Single-locale only. All-or-nothing. |
-| `[2] Export Trello CSV` | Produces one CSV per category under `exports/<Locale>/` plus a `trello_README.md` with the full import walkthrough. |
-| `[3] Check duplicates` | Scans every string file for duplicate keys and repeated values; writes `duplicates.md` per locale with matches. |
+| `[1] Migrate tips & buffs` | Rebuilds `tips_iz.json` / `tips_fs.json` / `abyss_buffs.json` / `travel_buffs.json` from `translation_strings.json`. Single-locale only. All-or-nothing. |
+| `[2] Migrate custom levels` | Builds `customlevel_strings` / `customlevel_regexs` / `custom_level_data`; key set from the source locale, translations from the target. |
+| `[3] Export Trello CSV` | Produces one CSV per category under `exports/<Locale>/` plus a `trello_README.md` with the full import walkthrough. |
+| `[4] Check duplicates` | Scans every string file for duplicate keys and repeated values; writes `duplicates.md` per locale with matches. |
 | `[0] Back` | Returns to the main menu. |
 
-### [3] Settings
+### [3] Documentation
+
+| Option | What it does |
+| ------ | ------------ |
+| `[1] PR recap → contributor summary` | Reads the weekly PR recap and writes one Markdown block per contributor. |
+| `[0] Back` | Returns to the main menu. |
+
+The tool asks for the recap file (pre-filled with the first candidate `.md` in
+the working directory) and the output file (defaults to the *Docs output*
+setting), renders the result, shows the per-contributor stats, and writes only
+once you confirm.
+
+**Expected input** — the first two non-empty lines are the header:
+
+```markdown
+2026-04-01..2026-04-07                      ← period (or already-formatted `01/04/26 → 07/04/26`)
+https://github.com/owner/repo/pull/123      ← PR URL; the number is read from /pull/(\d+)
+
+## 🌱 Newly Added Plants                    ← section
+
+@lafourmiedugaming-collab :                 ← contributor: @handle, or [Name](link) :
+* **Briseur de Machoir** (`seedType: 1390`) ← item
+
+## 🔧 Modified Achievements
+
+@Kurodatenshi :
+* **D'où est-ce que je viens ?** (`achievement: 7`)
+```
+
+**Output** — one block per contributor, plus the lead's derived *Reviews*:
+
+```markdown
+## 👤 @Kurodatenshi
+
+### 📅 Semaine — `01/04/26 → 07/04/26`
+> [PR#123](https://github.com/owner/repo/pull/123)
+
+**Résumé de la semaine**
+
+* Nouvelles traductions : **0**
+* Traductions ajustées : **1**
+* Reviews effectuées : **0**
+
+---
+
+#### Détail
+
+## 🔧 Modified Achievements
+* **D'où est-ce que je viens ?** (`achievement: 7`)
+```
+
+The rendered output stays in French by design — it lands verbatim in the French
+contributor files.
+
+### [4] Settings
 
 | Key             | Default            | Notes                                          |
 | --------------- | ------------------ | ---------------------------------------------- |
@@ -247,6 +360,9 @@ Answer yes to write `*_diff.json` next to each Markdown report.
 | Show emoji      | `true`             | Fallback: `[OK] / [!] / [X]`                   |
 | Show banner     | `true`             | ASCII banner at startup                        |
 | Trello label    | `To be translated` | Label written to every exported card           |
+| Docs lead       | `Charles LINDECKER` | Whose *Reviews* block the Documentation tab derives |
+| Docs aliases    | `@LINDECKER-Charles, LINDECKER-Charles` | Other spellings of the lead, folded into one block |
+| Docs output     | `contribution-summary.md` | Default target of the contributor summary |
 
 Supported ANSI colors: `default, red, green, yellow, blue, magenta, cyan,
 white` plus their `bright_*` variants.
@@ -265,7 +381,7 @@ stays writable:
 
 `$XDG_CONFIG_HOME` is honored on macOS too when set to an absolute path. Set
 `PVZF_CONSOLE_SETTINGS=/path/to/settings.json` to pin the file somewhere else
-(portable installs, CI). The active path is shown in `[3] Settings` under
+(portable installs, CI). The active path is shown in `[4] Settings` under
 *Settings file*.
 
 Upgrading from ≤ 1.4.1, which kept `settings.json` inside the package: that file
@@ -280,6 +396,7 @@ save. The old copy is left in place, so an older install alongside keeps working
 ```bash
 pvzf-console diff --lang French
 pvzf-console diff --lang German --out ./out --with-diff
+pvzf-console pr-resume --input recap.md --output docs/contributions.md
 ```
 
 | Command                                              | Effect                                                                      |
@@ -288,15 +405,23 @@ pvzf-console diff --lang German --out ./out --with-diff
 | `pvzf-console diff --lang French`                    | Run every diff type for French, write to `./reports/French/`.               |
 | `pvzf-console diff --lang French --out X`            | Same, writing to `X/French/` instead.                                       |
 | `pvzf-console diff --lang French --with-diff`        | Same, plus `*_diff.json` next to each Markdown report.                       |
+| `pvzf-console pr-resume`                             | Contributor summary from the first candidate `.md` in the cwd → `contribution-summary.md`. |
+| `pvzf-console pr-resume --input R.md --output O.md`  | Same, with both paths given. Aliases: none — long flags only.               |
+
+Auto-detection of the recap skips `README.md`, `README.dist.md`, `CHANGELOG.md`,
+`LICENSE.md`, `CONTRIBUTING.md`, `release.md` and the output file itself.
 
 Exit codes:
 
 | Code | Meaning                                              |
 | ---- | ---------------------------------------------------- |
 | `0`  | Success.                                             |
-| `2`  | Invalid locale, source locale rejected, or invalid project root (missing `Localization/` subfolder). |
+| `1`  | Runtime failure — recap missing, unreadable, or lacking its two header lines. |
+| `2`  | Invalid arguments, invalid locale, source locale rejected, or invalid project root (missing `Localization/` subfolder). |
 
-Use the `diff` command in CI to fail builds when a locale regresses.
+Use the `diff` command in CI to fail builds when a locale regresses, and
+`pr-resume` to regenerate the contributor documentation when the weekly PR
+merges.
 
 ---
 
@@ -331,6 +456,8 @@ exports/
     ├── trello_Abyss_Buffs.csv
     ├── trello_Travel_Buffs.csv
     └── trello_README.md
+
+contribution-summary.md              # Documentation tab / pr-resume (path configurable)
 ```
 
 Empty categories (0 missing entries) do not produce a file — keeps the
@@ -371,9 +498,15 @@ PVZ-Fuzion-ConsolManager/
     │   ├── diff-json.ts           # *_diff.json writers (native file shape)
     │   └── trello-csv.ts          # per-category CSVs + README template
     └── tools/
-        ├── tips-migration.ts      # tips_*.json builder (all-or-nothing)
+        ├── migration.ts           # tips/buffs + custom-level builders (all-or-nothing)
         ├── trello-export.ts       # collects cards + calls the writer
-        └── duplicate-checker.ts   # duplicate keys + repeated values scanner
+        ├── duplicate-checker.ts   # duplicate keys + repeated values scanner
+        └── pr-resume/             # PR recap → contributor documentation
+            ├── index.ts           # orchestration + input/output resolution
+            ├── parser.ts          # header split, section/contributor/bullet detection
+            ├── service.ts         # per-contributor aggregation + derived reviews
+            ├── renderer.ts        # final Markdown rendering
+            └── period.ts          # ISO range → dd/mm/yy
 ```
 
 ---
@@ -417,8 +550,8 @@ only requirement.
 | `<locale>: tips_iz.json missing`                  | Run Translator Tools → `[1] Migrate tips` for that locale first, then rerun the diff.             |
 | `Settings could not be saved — …`                 | The per-user config directory isn't writable. Fix its permissions, or point `PVZF_CONSOLE_SETTINGS` at a writable file. Settings still apply for the session. |
 | `Skipped tips_iz.json — N source string(s) missing` | Your `translation_strings.json` is still missing some source tip keys. Finish those first, then rerun the migration. |
-| Emoji show up as `??` in your terminal            | `[3] Settings` → `[6] Toggle emoji` for the `[OK] / [!] / [X]` fallback.                         |
-| Banner ASCII art renders as mojibake              | `[3] Settings` → `[7] Toggle ASCII banner`. The tool enables VT100 on Windows but some legacy hosts still fail. |
+| Emoji show up as `??` in your terminal            | `[4] Settings` → `[6] Toggle emoji` for the `[OK] / [!] / [X]` fallback.                         |
+| Banner ASCII art renders as mojibake              | `[4] Settings` → `[7] Toggle ASCII banner`. The tool enables VT100 on Windows but some legacy hosts still fail. |
 | Report file says 0 entries / no file at all       | 0 missing / empty-values is intentionally silent — the tool only writes a file when there's something to report. |
 | Travel-buffs keys look like `advancedBuffs:0`     | Expected: presence is checked by `category:id`; a missing ID keeps its complete `{name, desc}` object in the report. |
 
@@ -488,6 +621,19 @@ npm run test:cov       # vitest run --coverage (75% gate)
 | `npm run typecheck` | `tsc --noEmit` against `src` + `tests` (strict).      |
 | `npm test`          | Run the Vitest suite once.                            |
 | `npm run test:cov`  | Run tests with V8 coverage (75% gate on lines/functions/branches/statements). |
+
+---
+
+## 🔐 Security
+
+Found a vulnerability? **Don't open a public issue** — report it privately via a
+[GitHub security advisory](https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/security/advisories/new)
+or by email. Supported versions, scope and response targets live in
+[SECURITY.md](SECURITY.md).
+
+Every push and PR to `main` (plus a weekly schedule) runs the `Security`
+workflow: `npm audit` (blocking on high/critical production advisories), the
+ESLint security ruleset, Semgrep and Gitleaks.
 
 ---
 
