@@ -75,5 +75,5 @@ a schedule, and on demand:
 - Semgrep (`.semgrep.yml` plus the `p/typescript` and `p/nodejs` packs);
 - Gitleaks over the full repository history (`.gitleaks.toml`).
 
-Dependabot opens monthly dependency update pull requests behind a cooldown
+Dependabot opens weekly dependency update pull requests behind a cooldown
 window.

@@ -18,7 +18,7 @@ contributor documentation.
 [![CodeQL](https://img.shields.io/badge/CodeQL-security--extended-2ea44f?logo=github)](https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/actions/workflows/ci.yml)
 [![Semgrep](https://img.shields.io/badge/semgrep-p%2Ftypescript%20%2B%20p%2Fnodejs-1B4965?logo=semgrep&logoColor=white)](https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/actions/workflows/security.yml)
 [![Gitleaks](https://img.shields.io/badge/gitleaks-full%20history-000000?logo=gitleaks&logoColor=white)](https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/actions/workflows/security.yml)
-[![Dependabot](https://img.shields.io/badge/dependabot-monthly%20%2B%20cooldown-025E8C?logo=dependabot&logoColor=white)](.github/dependabot.yml)
+[![Dependabot](https://img.shields.io/badge/dependabot-weekly%20%2B%20cooldown-025E8C?logo=dependabot&logoColor=white)](.github/dependabot.yml)
 
 [![npm](https://img.shields.io/npm/v/@charles_lindecker/pvzf-console?logo=npm&color=CB3837)](https://www.npmjs.com/package/@charles_lindecker/pvzf-console)
 [![downloads](https://img.shields.io/npm/dm/@charles_lindecker/pvzf-console?logo=npm&color=CB3837&label=downloads)](https://www.npmjs.com/package/@charles_lindecker/pvzf-console)
