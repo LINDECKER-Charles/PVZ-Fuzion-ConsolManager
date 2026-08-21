@@ -11,16 +11,18 @@ version: 2
 # managed for that half is a hijacked release of a build tool, not a CVE in
 # something users run.
 #
-# Hence the cadence below: monthly version updates behind a cooldown, because a
-# hijacked release is almost always yanked within days of publication. Security
-# updates are a separate engine — they ignore `schedule`, `cooldown`, `groups`
-# and `open-pull-requests-limit`, and still open the day an advisory lands.
+# Hence the cadence below: weekly checks behind a cooldown. The cooldown does
+# the soaking, because a hijacked release is almost always yanked within days
+# of publication; the weekly schedule only bounds how long a version that has
+# already cleared its cooldown waits before being proposed. Security updates
+# are a separate engine — they ignore `schedule`, `cooldown`, `groups` and
+# `open-pull-requests-limit`, and still open the day an advisory lands.
 
 updates:
   - package-ecosystem: npm
     directory: "/"
     schedule:
-      interval: monthly
+      interval: weekly
       time: "05:00"
       timezone: Europe/Paris
     open-pull-requests-limit: 8
@@ -102,7 +104,7 @@ updates:
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: monthly
+      interval: weekly
       time: "05:00"
       timezone: Europe/Paris
     open-pull-requests-limit: 3
