@@ -31,9 +31,10 @@
   },
   "scripts": {
     "build": "tsup",
+    "build:site": "tsup --config tsup.site.config.ts",
     "prepublishOnly": "tsup",
     "dev": "tsx src/cli.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p site/tsconfig.json",
     "lint": "eslint .",
     "lint:security": "eslint . --max-warnings=0",
     "test": "vitest run",

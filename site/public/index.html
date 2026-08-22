@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PVZF Console Manager — translation toolkit for PvZ: Fusion</title>
+<meta name="description" content="One console for the whole Plants vs Zombies: Fusion translation workflow: diff locales, write reports, migrate files, export a Trello backlog, author contributor docs. Runs locally.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0d1520">
+<link rel="canonical" href="https://lindecker-charles.github.io/PVZ-Fuzion-ConsolManager/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://lindecker-charles.github.io/PVZ-Fuzion-ConsolManager/">
+<meta property="og:title" content="PVZF Console Manager">
+<meta property="og:description" content="Translation toolkit for Plants vs Zombies: Fusion. Diff locales, write reports, migrate files, export Trello backlogs, author contributor docs.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo+Mono:wght@400;500;700;900&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/sections.css">
+<link rel="stylesheet" href="css/terminal.css">
+<script type="module" src="js/site.js"></script>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav__inner">
+    <a href="#top" class="brand">
+      <svg class="brand__mark" width="26" height="32" viewBox="0 0 52 68" aria-hidden="true"><path d="M26 62V28" stroke="#57c766" stroke-width="4" stroke-linecap="round"/><path d="M26 34C26 18 14 8 0 6c0 16 12 26 26 28Z" fill="#57c766"/><path d="M26 40c0-16 12-26 26-28 0 16-12 26-26 28Z" fill="#a7e05a" opacity="0.8"/><path d="M8 62h36" stroke="#2b3b47" stroke-width="4" stroke-linecap="round"/></svg>
+      <span class="brand__name">PVZF CONSOLE <span class="brand__suffix">MANAGER</span></span>
+    </a>
+    <div class="nav__links">
+      <a href="#tools" class="nav__link" data-nav="tools">What it does</a>
+      <a href="#demo" class="nav__link" data-nav="demo">Demo</a>
+      <a href="#links" class="nav__link" data-nav="links">Links</a>
+      <a href="https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager" class="nav__cta">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+<header id="top" class="hero" data-hero>
+  <div class="hero__glow" data-hero-glow></div>
+  <div class="hero__inner">
+    <p class="hero__kicker"><span class="prompt">$</span> translation toolkit — plants vs zombies: fusion</p>
+    <h1 class="hero__title">
+      <span class="visually-hidden">PVZF Console Manager</span>
+      <span class="hero__letters" aria-hidden="true"><span style="--d: 0.05s">P</span><span style="--d: 0.1s">V</span><span style="--d: 0.15s">Z</span><span style="--d: 0.2s">F</span><br>
+      <span style="--d: 0.28s">C</span><span style="--d: 0.33s">O</span><span style="--d: 0.38s">N</span><span style="--d: 0.43s">S</span><span style="--d: 0.48s">O</span><span style="--d: 0.53s">L</span><span style="--d: 0.58s">E</span><span class="hero__cursor"></span></span>
+    </h1>
+    <div class="hero__bars" aria-hidden="true">
+      <div class="bar bar--cyan"></div>
+      <div class="bar bar--green"></div>
+      <div class="bar bar--lime"></div>
+    </div>
+    <p class="hero__lead">One console for the whole <em>Plants vs Zombies: Fusion</em> translation workflow.</p>
+    <p class="hero__sub">Diff every locale against the source, write per-locale reports, rebuild the tip and buff files, catch duplicates, export a Trello backlog, and turn the weekly PR recap into contributor documentation. Everything runs locally.</p>
+    <div class="hero__cta">
+      <div class="cmd">
+        <span class="prompt">$</span><span class="cmd__text">npx @charles_lindecker/pvzf-console</span>
+        <button type="button" class="cmd__copy" data-copy="npx @charles_lindecker/pvzf-console">copy</button>
+      </div>
+      <a href="https://www.npmjs.com/package/@charles_lindecker/pvzf-console" class="btn btn--primary">Get it on npm ↗</a>
+      <a href="https://github.com/Teyliu/PVZF-Translation" class="btn btn--outline">Main project: PVZF-Translation ↗</a>
+    </div>
+    <div class="hero__badges">
+      <span>MIT license</span>
+      <span>Node ≥ 20</span>
+      <span>Windows · macOS · Linux</span>
+      <span>no network · no telemetry · no account</span>
+    </div>
+  </div>
+</header>
+
+<section class="stats" data-stats aria-label="Key figures">
+  <div class="stats__inner">
+    <div class="stat"><div class="stat__num" data-count-up>19</div><div class="stat__label">locales handled</div></div>
+    <div class="stat"><div class="stat__num" data-count-up>8</div><div class="stat__label">translation categories</div></div>
+    <div class="stat"><div class="stat__num" data-count-up>2</div><div class="stat__label">runtime dependencies</div></div>
+    <div class="stat"><div class="stat__num" data-count-up>0</div><div class="stat__label">network calls at runtime</div></div>
+  </div>
+</section>
+
+<section id="tools" class="section">
+  <h2 class="section__title"><span class="hash">##</span> What it does</h2>
+  <p class="section__lead">Four tools, one console. Click any card to watch that tool run in the demo terminal.</p>
+  <div class="tools">
+    <a href="#demo" class="card card--tool" data-scenario="diff" data-reveal>
+      <img src="assets/icon-scan.svg" width="42" height="42" alt="">
+      <h3 class="tool__title">Show what's missing</h3>
+      <p class="tool__text">Diffs a locale against the source across 8 categories and writes one Markdown report per category — each missing entry printed as the exact JSON block to translate. Optional <code class="inline-code">*_diff.json</code> for re-injection.</p>
+      <div class="tool__cta">▶ see it run — diff</div>
+    </a>
+    <a href="#demo" class="card card--tool" data-scenario="migrate" data-reveal>
+      <img src="assets/icon-migrate.svg" width="42" height="42" alt="">
+      <h3 class="tool__title">Migrate files</h3>
+      <p class="tool__text">Builds the tip, buff and custom-level files a locale does not have yet, pulling each translation from its own <code class="inline-code">translation_strings.json</code>. Never overwrites an existing file.</p>
+      <div class="tool__cta">▶ see it run — migrate</div>
+    </a>
+    <a href="#demo" class="card card--tool" data-scenario="trello" data-reveal>
+      <img src="assets/icon-export.svg" width="42" height="42" alt="">
+      <h3 class="tool__title">Export &amp; audit</h3>
+      <p class="tool__text">One Trello-ready CSV per category plus a generated import guide, and a duplicate scanner that catches repeated JSON keys and translations reused across keys.</p>
+      <div class="tool__cta">▶ see it run — trello export</div>
+    </a>
+    <a href="#demo" class="card card--tool" data-scenario="pr" data-reveal>
+      <img src="assets/icon-docs.svg" width="42" height="42" alt="">
+      <h3 class="tool__title">Author the docs</h3>
+      <p class="tool__text">Splits the weekly translation-PR recap into one Markdown block per contributor, counters included — the lead's <em>Reviews</em> block is derived, not typed. Nothing is written until you confirm.</p>
+      <div class="tool__cta">▶ see it run — pr-resume</div>
+    </a>
+  </div>
+</section>
+
+<section id="demo" class="section">
+  <h2 class="section__title"><span class="hash">##</span> Try the console</h2>
+  <p class="section__lead section__lead--wide">This is not a video — <strong>click the terminal and drive it yourself</strong> with ↑ ↓ Enter Esc, exactly like the real thing. Or let it loop through a session on its own.</p>
+  <div class="demo">
+    <div class="terminal" data-terminal-root>
+      <div class="terminal__chrome" aria-hidden="true">
+        <span class="terminal__dot"></span><span class="terminal__dot"></span><span class="terminal__dot"></span>
+        <span class="terminal__path">…/pvzf-workspace — pvzf-console</span>
+      </div>
+      <div class="terminal__bar">
+        <div class="terminal__chips" role="group" aria-label="Demo scenario">
+          <button type="button" class="chip" data-scenario="diff">diff</button>
+          <button type="button" class="chip" data-scenario="migrate">migrate</button>
+          <button type="button" class="chip" data-scenario="trello">trello</button>
+          <button type="button" class="chip" data-scenario="pr">pr-resume</button>
+        </div>
+        <div class="terminal__controls">
+          <button type="button" class="chip chip--auto" data-terminal-auto hidden>auto ▸</button>
+          <button type="button" class="chip chip--ghost" data-terminal-play>⏸ pause</button>
+          <button type="button" class="chip chip--ghost chip--speed" data-terminal-speed>1×</button>
+        </div>
+      </div>
+      <div class="terminal__screen" data-terminal tabindex="0" role="application" aria-label="Interactive console demo — use arrow keys, Enter and Escape">
+        <div class="terminal__lines" data-terminal-lines aria-live="off"></div>
+        <div class="terminal__hint" role="status"><span class="terminal__hint-dot"></span><span data-terminal-hint>click to take control</span></div>
+      </div>
+    </div>
+    <div class="demo__side">
+      <div class="panel" data-reveal>
+        <h3 class="panel__title">KEYS — HERE AND IN THE REAL THING</h3>
+        <div class="keys">
+          <div class="keys__row"><span class="keys__key">↑ ↓</span><span>move</span></div>
+          <div class="keys__row"><span class="keys__key">Enter</span><span>confirm</span></div>
+          <div class="keys__row"><span class="keys__key">Esc</span><span>back out — cancelling never acts</span></div>
+        </div>
+        <p class="panel__note">Past ten locales the picker turns into a type-to-filter list; <em>All locales</em> runs the whole set at once.</p>
+      </div>
+      <div class="panel" data-reveal>
+        <h3 class="panel__title">OR HEADLESS — CLICK TO COPY</h3>
+        <div class="cmdlist">
+          <button type="button" class="cmdlist__item" data-copy="pvzf-console diff --lang French"><span><span class="prompt">$ </span>pvzf-console diff --lang French</span><span class="cmdlist__tag" data-copy-label>copy</span></button>
+          <button type="button" class="cmdlist__item" data-copy="pvzf-console diff --lang German --with-diff"><span><span class="prompt">$ </span>pvzf-console diff --lang German --with-diff</span><span class="cmdlist__tag" data-copy-label>copy</span></button>
+          <button type="button" class="cmdlist__item" data-copy="pvzf-console pr-resume --input recap.md"><span><span class="prompt">$ </span>pvzf-console pr-resume --input recap.md</span><span class="cmdlist__tag" data-copy-label>copy</span></button>
+        </div>
+        <p class="panel__note">CI-friendly exit codes: <span class="ok">0</span> success · <span class="strong">1</span> failure · <span class="strong">2</span> bad arguments.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="marquee" aria-hidden="true">
+  <div class="marquee__track">
+    <span>English (source) ▪ Arabic ▪ Chinese (CN) ▪ Filipino ▪ French ▪ German ▪ Indonesian ▪ Italian ▪ Japanese ▪ Javanese ▪ Korean ▪ Polish ▪ Portuguese ▪ Romanian ▪ Russian ▪ Spanish ▪ Turkish ▪ Ukrainian ▪ Vietnamese ▪ </span>
+    <span>English (source) ▪ Arabic ▪ Chinese (CN) ▪ Filipino ▪ French ▪ German ▪ Indonesian ▪ Italian ▪ Japanese ▪ Javanese ▪ Korean ▪ Polish ▪ Portuguese ▪ Romanian ▪ Russian ▪ Spanish ▪ Turkish ▪ Ukrainian ▪ Vietnamese ▪ </span>
+  </div>
+</div>
+
+<section id="links" class="section section--last">
+  <h2 class="section__title"><span class="hash">##</span> Everything lives in the open</h2>
+  <a href="https://github.com/Teyliu/PVZF-Translation" class="feature" data-reveal>
+    <div>
+      <div class="feature__eyebrow">MAIN PROJECT</div>
+      <div class="feature__title">Teyliu / PVZF-Translation</div>
+      <div class="feature__text">The community translation project this console serves — where the locale files live and the PRs land.</div>
+    </div>
+    <div class="feature__arrow" aria-hidden="true">↗</div>
+  </a>
+  <div class="links">
+    <a href="https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager" class="card card--link" data-reveal>
+      <div class="card__eyebrow">CONSOLE REPO ↗</div>
+      <div class="card__title">PVZ-Fuzion-ConsolManager</div>
+      <p class="card__text">Strict TypeScript, tested with Vitest, CI on Windows, macOS and Linux. Issues and PRs welcome.</p>
+    </a>
+    <a href="https://www.npmjs.com/package/@charles_lindecker/pvzf-console" class="card card--link" data-reveal>
+      <div class="card__eyebrow">NPM PACKAGE ↗</div>
+      <div class="card__title">@charles_lindecker/pvzf-console</div>
+      <p class="card__text">npx-ready, one bundled file, Node 20 or newer. Settings are remembered across runs.</p>
+    </a>
+    <div class="card card--static" data-reveal>
+      <div class="card__eyebrow">DOCS</div>
+      <div class="card__title">Screen-by-screen guides</div>
+      <p class="card__text card__text--links"><a href="https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/blob/main/docs/usage.md">usage</a> · <a href="https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/blob/main/docs/catalog.md">catalog</a> · <a href="https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/blob/main/docs/outputs.md">outputs</a> · <a href="https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/blob/main/docs/configuration.md">configuration</a> · <a href="https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/blob/main/docs/architecture.md">architecture</a> · <a href="https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/blob/main/docs/troubleshooting.md">troubleshooting</a></p>
+    </div>
+    <a href="https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/blob/main/CONTRIBUTING.md" class="card card--link card--link-green" data-reveal>
+      <div class="card__eyebrow card__eyebrow--green">CONTRIBUTE ↗</div>
+      <div class="card__title">CONTRIBUTING.md</div>
+      <p class="card__text">The dev loop, code standards, and the four-step drill for adding a new translation category. Starring the repo or filing a precise bug report helps just as much.</p>
+    </a>
+    <div class="card card--static" data-reveal>
+      <div class="card__eyebrow card__eyebrow--green">SUPPORT</div>
+      <div class="card__title">Free, MIT, personal time</div>
+      <p class="card__text">If it saved you an evening of hand-diffing: <a href="https://ko-fi.com/charleslindecker">Ko-fi</a> (one-off, no account) or <a href="https://github.com/sponsors/LINDECKER-Charles">GitHub Sponsors</a>.</p>
+    </div>
+    <a href="mailto:charles.lindecker@outlook.fr" class="card card--link" data-reveal>
+      <div class="card__eyebrow">CONTACT ↗</div>
+      <div class="card__title">charles.lindecker@outlook.fr</div>
+      <p class="card__text">Maintained by Charles Lindecker — @LINDECKER-Charles on GitHub.</p>
+    </a>
+  </div>
+</section>
+</main>
+
+<div class="visually-hidden" role="status" data-copy-status></div>
+
+<footer class="footer">
+  <div class="footer__inner">
+    <div class="footer__brand">
+      <svg width="18" height="22" viewBox="0 0 52 68" aria-hidden="true"><path d="M26 62V28" stroke="#57c766" stroke-width="4" stroke-linecap="round"/><path d="M26 34C26 18 14 8 0 6c0 16 12 26 26 28Z" fill="#57c766"/><path d="M26 40c0-16 12-26 26-28 0 16-12 26-26 28Z" fill="#a7e05a" opacity="0.8"/></svg>
+      <span>MIT · built by <a href="https://github.com/LINDECKER-Charles">Charles Lindecker</a></span>
+    </div>
+    <div class="footer__thanks">Thanks to the PvZ Fusion translator community, and to @cassidy [BLMS]</div>
+  </div>
+</footer>
+
+</body>
+</html>

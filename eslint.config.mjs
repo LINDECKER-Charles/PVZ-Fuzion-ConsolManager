@@ -27,6 +27,17 @@ const LIMIT_RULES = {
   complexity: ["error", 10],
   "max-len": ["error", { code: 100, ignoreUrls: true }],
 };
+/**
+ * Underscore-prefixed args/vars are intentional placeholders (unused interface
+ * params, destructuring rest). Standard convention, shared by every source tree.
+ */
+const UNUSED_VARS_RULE = {
+  "@typescript-eslint/no-unused-vars": [
+    "error",
+    { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+  ],
+};
+
 export default tseslint.config(
   {
     ignores: [
@@ -34,6 +45,7 @@ export default tseslint.config(
       "node_modules/",
       "coverage/",
       "PvZ_Fusion_Translator/",
+      "site/dist/",
       "**/*.config.ts",
       "**/*.config.mjs",
     ],
@@ -54,13 +66,7 @@ export default tseslint.config(
     },
     rules: {
       ...LIMIT_RULES,
-
-      // Underscore-prefixed args/vars are intentional placeholders (unused
-      // interface params, destructuring rest). Standard convention.
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
-      ],
+      ...UNUSED_VARS_RULE,
 
       /**
        * Disabled security rules — high false-positive rate for a *local CLI
@@ -80,6 +86,27 @@ export default tseslint.config(
       "security/detect-non-literal-fs-filename": "off",
       // No dynamic require() in this ESM codebase; rule only yields noise.
       "security/detect-non-literal-require": "off",
+    },
+  },
+
+  {
+    // Landing page (site/): same ceilings, browser globals instead of Node.
+    // The security ruleset stays fully on — this code runs on visitors' machines.
+    files: ["site/src/**/*.ts"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: {
+        ...globals.browser,
+      },
+    },
+    rules: {
+      ...LIMIT_RULES,
+      ...UNUSED_VARS_RULE,
+      // Lookups are keyed by closed string-literal unions (RunId, LiveScreen)
+      // over the page's own static catalog — no visitor-controlled key ever
+      // reaches them, so the rule would only flag typed table lookups.
+      "security/detect-object-injection": "off",
     },
   },
 

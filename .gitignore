@@ -30,3 +30,6 @@ __pycache__/
 
 release.md
 *.tgz
+
+# Landing page bundle (built by `npm run build:site`, deployed by the Pages workflow).
+site/dist/
