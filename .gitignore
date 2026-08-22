@@ -11,11 +11,8 @@ exports/
 settings.json
 coverage/
 # docs/ is the published documentation. Only the working material stays local:
-# point-in-time audits, release drafts and announcement copy.
-docs/reports/
-docs/release-notes.md
-docs/discord-announcement.md
-docs/old-release-note.md
+# point-in-time audits, release drafts and announcement copy (see docs/archived/README.md).
+docs/archived/
 graphify-out
 CLAUDE.md
 

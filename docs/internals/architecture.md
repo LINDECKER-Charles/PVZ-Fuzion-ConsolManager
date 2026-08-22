@@ -1,8 +1,8 @@
 # Architecture
 
 How the toolkit is put together, why it is put together that way, and where to plug new
-behaviour in. For the user-facing side see [usage.md](usage.md); for the data it operates on
-see [catalog.md](catalog.md).
+behaviour in. For the user-facing side see [usage.md](../guide/usage.md); for the data it operates on
+see [catalog.md](../guide/catalog.md).
 
 - [Design goals](#design-goals)
 - [Layers](#layers)
@@ -35,7 +35,7 @@ see [catalog.md](catalog.md).
 
 ## Layers
 
-<img src="assets/layers.svg" alt="Layered architecture: entry, terminal, tools, parsers and reporting, core" width="900">
+<img src="../assets/layers.svg" alt="Layered architecture: entry, terminal, tools, parsers and reporting, core" width="900">
 
 Each layer may only import the ones below it. In practice:
 
@@ -123,7 +123,7 @@ means *All types* on one screen — cancelling must never be mistaken for a choi
 
 ## The scan pipeline
 
-<img src="assets/scan-pipeline.svg" alt="Scan pipeline: load, diff, then write reports and JSON diffs" width="900">
+<img src="../assets/scan-pipeline.svg" alt="Scan pipeline: load, diff, then write reports and JSON diffs" width="900">
 
 `tools/scan.ts` is the heart of the diff side. Every category reduces to the same three
 steps — collect what the target is missing, write a Markdown report, optionally write a JSON
@@ -254,7 +254,7 @@ reducer tested without a DOM.
 
 | I want to… | Do this |
 | --- | --- |
-| Add a translation category | Follow the four-step drill in [CONTRIBUTING.md](../CONTRIBUTING.md#adding-a-translation-category) |
+| Add a translation category | Follow the four-step drill in [CONTRIBUTING.md](../../CONTRIBUTING.md#adding-a-translation-category) |
 | Add a screen | Write it in `cli/screens/`, register it in the parent menu's action map, take `AppContext` as its only argument |
 | Add a prompt type | Add it to `AppDeps` and `realDeps()`, then use it from a screen — never import `menus.ts` from a screen directly |
 | Add an output format | Put the writer in `reporting/`, call it from the `tools/` orchestration that owns the data |

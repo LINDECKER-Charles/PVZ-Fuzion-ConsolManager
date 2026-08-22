@@ -10,8 +10,8 @@ contributor documentation.
 [**Website**](https://lindecker-charles.github.io/PVZ-Fuzion-ConsolManager/) ·
 [**npm**](https://www.npmjs.com/package/@charles_lindecker/pvzf-console) ·
 [**Docs**](docs/) ·
-[**Supported files**](docs/catalog.md) ·
-[**Architecture**](docs/architecture.md) ·
+[**Supported files**](docs/guide/catalog.md) ·
+[**Architecture**](docs/internals/architecture.md) ·
 [**Contributing**](CONTRIBUTING.md)
 
 [![CI](https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/actions/workflows/ci.yml/badge.svg)](https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/actions/workflows/ci.yml)
@@ -27,11 +27,11 @@ contributor documentation.
 [![typescript](https://img.shields.io/badge/typescript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![vitest](https://img.shields.io/badge/tested%20with-vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
 [![coverage gate](https://img.shields.io/badge/coverage%20gate-75%25-6E9F18)](vitest.config.ts)
-[![platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4c6ef5)](docs/usage.md)
+[![platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4c6ef5)](docs/guide/usage.md)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-[![locales](https://img.shields.io/badge/locales-19-2ea44f)](docs/catalog.md)
-[![translation types](https://img.shields.io/badge/translation%20types-8-2ea44f)](docs/catalog.md)
+[![locales](https://img.shields.io/badge/locales-19-2ea44f)](docs/guide/catalog.md)
+[![translation types](https://img.shields.io/badge/translation%20types-8-2ea44f)](docs/guide/catalog.md)
 [![runtime deps](https://img.shields.io/badge/runtime%20deps-2-2ea44f)](package.json)
 [![sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-EA4AAA?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/LINDECKER-Charles)
 [![ko-fi](https://img.shields.io/badge/ko--fi-buy%20me%20a%20coffee-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/charleslindecker)
@@ -71,7 +71,7 @@ npm run dev                                      # live TUI from source, via tsx
 
 |   | Tool | What you get |
 | --- | --- | --- |
-| <img src="docs/assets/icon-scan.svg" width="26" alt=""> | **Show what's missing** | Diffs a locale against the source across [8 categories](docs/catalog.md) and writes one Markdown report per category — each missing entry printed as the exact JSON block to translate. Optional `*_diff.json` for re-injection. |
+| <img src="docs/assets/icon-scan.svg" width="26" alt=""> | **Show what's missing** | Diffs a locale against the source across [8 categories](docs/guide/catalog.md) and writes one Markdown report per category — each missing entry printed as the exact JSON block to translate. Optional `*_diff.json` for re-injection. |
 | <img src="docs/assets/icon-migrate.svg" width="26" alt=""> | **Migrate files** | Builds the tip, buff and custom-level files a locale does not have yet, pulling each translation from its own `translation_strings.json`. Never overwrites an existing file. |
 | <img src="docs/assets/icon-export.svg" width="26" alt=""> | **Export & audit** | One Trello-ready CSV per category plus a generated import guide, and a duplicate scanner that catches repeated JSON keys and translations reused across keys. |
 | <img src="docs/assets/icon-docs.svg" width="26" alt=""> | **Author the docs** | Splits the weekly translation-PR recap into one Markdown block per contributor, counters included — the lead's *Reviews* block is derived, not typed. |
@@ -100,7 +100,7 @@ Move with the arrow keys, confirm with `Enter`, leave any screen with `Esc`.
 Past ten locales the picker turns into a type-to-filter list, an *All locales* entry runs the
 whole set at once, and a cancelled prompt never triggers the action it interrupted.
 
-**Full walkthrough of every screen: [docs/usage.md](docs/usage.md).**
+**Full walkthrough of every screen: [docs/guide/usage.md](docs/guide/usage.md).**
 
 ## Using it headlessly
 
@@ -111,7 +111,7 @@ pvzf-console pr-resume --input recap.md --output docs/contributions.md
 ```
 
 Exit codes are CI-friendly: `0` success, `1` runtime failure, `2` bad arguments or unknown
-locale. Details in [docs/usage.md](docs/usage.md#headless-cli).
+locale. Details in [docs/guide/usage.md](docs/guide/usage.md#headless-cli).
 
 ---
 
@@ -124,7 +124,7 @@ contribution-summary.md
 ```
 
 A category with nothing to fix writes no file at all, so the output tree is the backlog.
-Exact anatomy of every generated artifact: [docs/outputs.md](docs/outputs.md).
+Exact anatomy of every generated artifact: [docs/guide/outputs.md](docs/guide/outputs.md).
 
 ---
 
@@ -132,16 +132,17 @@ Exact anatomy of every generated artifact: [docs/outputs.md](docs/outputs.md).
 
 | Document | What's in it |
 | --- | --- |
-| [docs/usage.md](docs/usage.md) | Install, every menu screen, the headless commands, exit codes. |
-| [docs/catalog.md](docs/catalog.md) | Every file, locale and category the toolkit handles — and what it deliberately ignores. |
-| [docs/configuration.md](docs/configuration.md) | Settings reference, where `settings.json` lives, environment overrides. |
-| [docs/outputs.md](docs/outputs.md) | The shape of every report, JSON diff, CSV and summary produced. |
-| [docs/architecture.md](docs/architecture.md) | Layers, seams, invariants, extension points. |
-| [docs/troubleshooting.md](docs/troubleshooting.md) | Symptom → cause → fix. |
+| [docs/guide/usage.md](docs/guide/usage.md) | Install, every menu screen, the headless commands, exit codes. |
+| [docs/guide/catalog.md](docs/guide/catalog.md) | Every file, locale and category the toolkit handles — and what it deliberately ignores. |
+| [docs/guide/configuration.md](docs/guide/configuration.md) | Settings reference, where `settings.json` lives, environment overrides. |
+| [docs/guide/outputs.md](docs/guide/outputs.md) | The shape of every report, JSON diff, CSV and summary produced. |
+| [docs/internals/architecture.md](docs/internals/architecture.md) | Layers, seams, invariants, extension points. |
+| [docs/guide/troubleshooting.md](docs/guide/troubleshooting.md) | Symptom → cause → fix. |
 | [Website](https://lindecker-charles.github.io/PVZ-Fuzion-ConsolManager/) | The landing page, with a console you can drive from the browser. Source in [`site/`](site/). |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, code standards, commit convention, how to add a translation type. |
 | [SECURITY.md](SECURITY.md) | Threat model, supported versions, private reporting. |
-| [Releases](https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/releases) | What changed, version by version. |
+| [docs/release/](docs/release/README.md) | What shipped, version by version — the GitHub release notes, kept in the repository. |
+| [docs/changelog/](docs/changelog/README.md) | The full technical history, every commit accounted for, from the 2025 prototype to today. |
 
 ---
 

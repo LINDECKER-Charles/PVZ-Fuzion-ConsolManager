@@ -23,7 +23,7 @@ everyone effort.
 - **Report a bug** — include your OS, `node --version`, the command or menu path you took,
   and what the console printed. A locale name and the offending JSON snippet help a lot.
 - **Suggest a translation category** the game added and the toolkit does not cover yet.
-  See the current list in [docs/catalog.md](docs/catalog.md).
+  See the current list in [docs/guide/catalog.md](docs/guide/catalog.md).
 - **Improve the docs** — if something in this repository misled you, that is a bug too.
 - **Send a patch.** Small, focused pull requests get reviewed fastest.
 
@@ -42,7 +42,7 @@ npm run lint         # style + the size/complexity limits
 
 You need Node 20 or newer, and a `PvZ_Fusion_Translator/` folder to exercise the tools by
 hand — the repository already sits next to one in the usual layout, and the auto-discovery
-described in [docs/usage.md](docs/usage.md#pointing-it-at-the-game-files) will find it.
+described in [docs/guide/usage.md](docs/guide/usage.md#pointing-it-at-the-game-files) will find it.
 
 Nothing in the test suite needs the game files: fixtures are built in temporary directories.
 
@@ -84,7 +84,7 @@ GitHub Actions* (or `gh api -X POST repos/<owner>/<repo>/pages -f build_type=wor
 
 ## Code standards
 
-The full rationale lives in [docs/architecture.md](docs/architecture.md); this is the short
+The full rationale lives in [docs/internals/architecture.md](docs/internals/architecture.md); this is the short
 version. **The numeric limits are enforced by ESLint**, so a build failure is the first
 feedback you will get:
 
@@ -199,9 +199,9 @@ npm run lint && npm run typecheck && npm run test:cov && npm run build
 Then check that:
 
 - [ ] the change is covered by tests that fail without it;
-- [ ] user-visible behaviour is reflected in the docs — [docs/usage.md](docs/usage.md) for
-      screens and commands, [docs/catalog.md](docs/catalog.md) for new files or categories,
-      [docs/outputs.md](docs/outputs.md) for new artifacts;
+- [ ] user-visible behaviour is reflected in the docs — [docs/guide/usage.md](docs/guide/usage.md) for
+      screens and commands, [docs/guide/catalog.md](docs/guide/catalog.md) for new files or categories,
+      [docs/guide/outputs.md](docs/guide/outputs.md) for new artifacts;
 - [ ] settings stay backward-compatible — no field renamed, new fields have a default;
 - [ ] no new runtime dependency slipped in;
 - [ ] commits follow the convention above.
@@ -231,7 +231,7 @@ registry — there is nothing else to wire.
 **4. Export it.** Add the list constant in `src/tools/trello-export.ts` and one line in
 `stringListCards`. The CSV writer groups by list name on its own.
 
-**5. Document and test it.** Add the row to [docs/catalog.md](docs/catalog.md), and a suite
+**5. Document and test it.** Add the row to [docs/guide/catalog.md](docs/guide/catalog.md), and a suite
 covering: an entry missing from the target, an entry present but empty, and a clean locale
 writing nothing.
 
@@ -239,12 +239,16 @@ writing nothing.
 
 Maintainer checklist:
 
-1. Bump `version` in `package.json` and write the release notes (`docs/release-notes.md`,
-   kept local, then published on the GitHub release).
-2. Update the supported-versions table in [SECURITY.md](SECURITY.md) if the minor changed.
-3. `npm run lint && npm run typecheck && npm run test:cov && npm run build`.
-4. `npm publish` — `prepublishOnly` re-runs the bundler, so `dist/` can never be stale.
-5. Tag the release and let CI confirm green on all four platform jobs.
+1. Bump `version` in `package.json`.
+2. Write the history: `docs/changelog/v<version>.md` (every commit since the previous tag,
+   format in [docs/changelog/README.md](docs/changelog/README.md)) and the release notes in
+   `docs/release/v<version>.md` — its body is what goes on the GitHub release, verbatim. Add
+   both to their folder index. Drafts and announcement copy stay local under `docs/archived/`.
+3. Update the supported-versions table in [SECURITY.md](SECURITY.md) if the minor changed.
+4. `npm run lint && npm run typecheck && npm run test:cov && npm run build`.
+5. `npm publish` — `prepublishOnly` re-runs the bundler, so `dist/` can never be stale.
+6. Tag the release, create the GitHub release from `docs/release/v<version>.md`, and let CI
+   confirm green on all four platform jobs.
 
 ## Reporting a vulnerability
 

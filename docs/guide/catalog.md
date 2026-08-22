@@ -182,4 +182,4 @@ Present in the bundle, never read or written by the console:
 | `Dumps/MD5.json`, `MD5Convert.txt`, `changelog.txt` | Game bookkeeping. |
 
 Adding a category is a small, well-defined change — the drill is in
-[CONTRIBUTING.md](../CONTRIBUTING.md#adding-a-translation-category).
+[CONTRIBUTING.md](../../CONTRIBUTING.md#adding-a-translation-category).
