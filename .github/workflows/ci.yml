@@ -50,6 +50,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Build site
+        run: npm run build:site
+
   codeql:
     name: codeql
     runs-on: ubuntu-latest

@@ -1,0 +1,85 @@
+name: Pages
+
+# Builds the landing page (site/) and publishes it to GitHub Pages.
+#
+# Source: GitHub Actions — no gh-pages branch, no Jekyll. The artifact is the
+# `site/dist/` folder produced by `npm run build:site` (index.html, CSS, SVG
+# assets and the bundled script).
+#
+# One-time setup, done by a repository admin (GITHUB_TOKEN cannot do it):
+#   Settings → Pages → Build and deployment → Source: "GitHub Actions"
+# or, from a terminal authenticated as the owner:
+#   gh api -X POST repos/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/pages -f build_type=workflow
+# Until then the deploy job fails at "Configure Pages" with a clear message.
+#
+# Pull requests are covered by ci.yml, which builds the site on every matrix
+# job; this workflow only runs on main so a broken page never goes live.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "tsup.site.config.ts"
+      - "tsconfig.json"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Same gates as CI: a push to main that breaks lint, types or tests
+      # must not be deployed just because it reached the branch.
+      - name: Lint, typecheck and test
+        run: npm run lint && npm run typecheck && npm test
+
+      - name: Build site
+        run: npm run build:site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/dist
+
+  deploy:
+    name: deploy to github pages
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Fails fast with "Pages not enabled" until the one-time setup above is done.
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5
