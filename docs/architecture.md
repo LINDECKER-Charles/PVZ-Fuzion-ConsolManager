@@ -243,6 +243,13 @@ The published tarball ships `dist/`, `data/` (the ASCII banner) and both READMEs
 The banner path is resolved at runtime relative to the package root, with fallbacks, so it
 still renders from a global install in a root-owned prefix.
 
+The landing page is a second, independent bundle: `tsup.site.config.ts` compiles
+`site/src/main.ts` for browsers into `site/dist/js/site.js` and copies `site/public/`
+(markup, CSS, SVG assets) next to it. `site/dist/` is the whole artifact the Pages workflow
+uploads — nothing in it is fetched at runtime except the two Google Fonts. The terminal demo
+re-implements the TUI's screens as pure data (`site/src/terminal/`), so its live mode is a
+reducer tested without a DOM.
+
 ## Extension points
 
 | I want to… | Do this |

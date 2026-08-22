@@ -7,6 +7,7 @@ Diff every locale against the source, write per-locale reports, rebuild the tip 
 files, catch duplicates, export a Trello backlog, and turn the weekly PR recap into
 contributor documentation.
 
+[**Website**](https://lindecker-charles.github.io/PVZ-Fuzion-ConsolManager/) ·
 [**npm**](https://www.npmjs.com/package/@charles_lindecker/pvzf-console) ·
 [**Docs**](docs/) ·
 [**Supported files**](docs/catalog.md) ·
@@ -137,6 +138,7 @@ Exact anatomy of every generated artifact: [docs/outputs.md](docs/outputs.md).
 | [docs/outputs.md](docs/outputs.md) | The shape of every report, JSON diff, CSV and summary produced. |
 | [docs/architecture.md](docs/architecture.md) | Layers, seams, invariants, extension points. |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Symptom → cause → fix. |
+| [Website](https://lindecker-charles.github.io/PVZ-Fuzion-ConsolManager/) | The landing page, with a console you can drive from the browser. Source in [`site/`](site/). |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, code standards, commit convention, how to add a translation type. |
 | [SECURITY.md](SECURITY.md) | Threat model, supported versions, private reporting. |
 | [Releases](https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/releases) | What changed, version by version. |

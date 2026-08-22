@@ -52,14 +52,35 @@ Nothing in the test suite needs the game files: fixtures are built in temporary 
 | --- | --- |
 | `npm run dev` | Run the TUI live from source (`tsx src/cli.ts`). |
 | `npm run build` | Bundle `src/cli.ts` to `dist/cli.js` with tsup. |
-| `npm run typecheck` | `tsc --noEmit` over `src/` and `tests/`, strict. |
+| `npm run build:site` | Build the landing page into `site/dist/` (script bundle + a copy of `site/public/`). |
+| `npm run typecheck` | `tsc --noEmit` over `src/`, `tests/` and `site/src/`, strict. |
 | `npm run lint` | ESLint: style, TypeScript rules, security ruleset, size and complexity limits. |
 | `npm run lint:security` | Same, failing on any warning — the gate CI uses. |
 | `npm test` | Vitest, one pass. |
 | `npm run test:cov` | Vitest with V8 coverage and the 75% gate. |
 
-CI runs lint, typecheck, coverage and build on Node 20 and 22 (Linux) plus one macOS and one
-Windows job, because path handling and the per-user config directory differ per platform.
+CI runs lint, typecheck, coverage and both builds on Node 20 and 22 (Linux) plus one macOS and
+one Windows job, because path handling and the per-user config directory differ per platform.
+
+### Landing page
+
+The website lives in `site/`: static markup and styles in `site/public/`, the behaviour
+(page effects and the interactive terminal demo) in `site/src/`, bundled by
+`tsup.site.config.ts`. It has no runtime dependency and ships no framework; the same lint
+limits apply to its TypeScript, and the terminal logic is unit-tested under `tests/site/`.
+
+To check a change, build it and serve the folder over HTTP — the page is an ES module, which
+browsers refuse to load from `file://`:
+
+```bash
+npm run build:site
+npx serve site/dist        # or: python -m http.server -d site/dist
+```
+
+The [Pages workflow](.github/workflows/pages.yml) rebuilds and publishes it on every push to
+`main` that touches `site/`. Publishing needs a one-time switch by a repository admin, which
+the workflow's own token cannot flip: *Settings → Pages → Build and deployment → Source:
+GitHub Actions* (or `gh api -X POST repos/<owner>/<repo>/pages -f build_type=workflow`).
 
 ## Code standards
 
