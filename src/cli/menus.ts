@@ -17,7 +17,14 @@
  * way out. Nothing is ever written on a cancelled prompt.
  */
 
-import { autocomplete, confirm, isCancel, select, text } from "@clack/prompts";
+import {
+  autocomplete,
+  type CANCEL_SYMBOL,
+  confirm,
+  isCancel,
+  select,
+  text,
+} from "@clack/prompts";
 
 import { type ConsoleIO, defaultIO, error, streams } from "./output";
 import { THEME } from "./theme";
@@ -160,7 +167,7 @@ function promptForLocale(
   options: PickerOption[],
   localeCount: number,
   io: ConsoleIO,
-): Promise<string | symbol> {
+): Promise<string | typeof CANCEL_SYMBOL> {
   const message = THEME.heading("Select a localization");
   const shared = { message, options, maxItems: MAX_VISIBLE_ITEMS, ...streams(io) };
   return localeCount > AUTOCOMPLETE_THRESHOLD
