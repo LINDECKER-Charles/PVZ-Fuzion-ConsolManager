@@ -2,6 +2,10 @@ PvZ_Fusion_Translator/
 .idea/
 .vscode/
 
+# Local agent state: per-machine settings and the git worktrees agents work in.
+.claude/settings.local.json
+.claude/worktrees/
+
 node_modules/
 dist/
 *.tsbuildinfo
