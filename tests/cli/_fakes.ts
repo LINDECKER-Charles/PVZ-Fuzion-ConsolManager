@@ -64,6 +64,7 @@ export function fakeDeps(overrides: FakeDepsOverrides = {}): AppDeps {
       Promise.resolve(current),
     askText: (_l: string, d = "") => Promise.resolve(d),
     askConfirm: (_l: string, d = false) => Promise.resolve(d),
+    askMultiSelect: (_l, _o, checked) => Promise.resolve([...checked]),
     selectLocalization: () => Promise.resolve("French"),
     clearConsole: () => {},
     pressEnterToContinue: () => Promise.resolve(),

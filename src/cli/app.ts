@@ -7,6 +7,7 @@ import type { AppContext } from "./context";
 import { type AppDeps, realDeps } from "./deps";
 import { MENU_CANCELLED, type MenuOption } from "./menus";
 import { THEME } from "./theme";
+import { agentsScreen } from "./screens/agents";
 import { documentation } from "./screens/documentation";
 import { type MenuAction } from "./screens/menu-loop";
 import { showMissing } from "./screens/missing";
@@ -23,6 +24,7 @@ const MAIN_MENU_OPTIONS: readonly MenuOption[] = [
   { key: "2", label: "Translator tools", hint: "migrate · trello · duplicates" },
   { key: "3", label: "Documentation", hint: "PR recap → contributor docs" },
   { key: "4", label: "Settings" },
+  { key: "5", label: "AI agents", hint: "install the skill for Claude Code, Codex…" },
   { key: String(EXIT_KEY), label: "Exit" },
 ];
 
@@ -32,6 +34,7 @@ export const MAIN_MENU_ACTIONS: ReadonlyMap<number, MenuAction> = new Map([
   [2, translatorTools],
   [3, documentation],
   [4, settingsMenu],
+  [5, agentsScreen()],
 ]);
 
 export interface AppOptions {

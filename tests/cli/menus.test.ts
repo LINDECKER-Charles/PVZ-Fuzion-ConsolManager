@@ -17,6 +17,7 @@ import {
   askChoice,
   askChoiceFromList,
   askConfirm,
+  askMultiSelect,
   askText,
   selectLocalization,
 } from "../../src/cli/menus";
@@ -141,6 +142,33 @@ describe("askConfirm", () => {
     const io = scriptedIO();
     io.keys(KEY.escape);
     expect(await askConfirm("Sure?", true, io)).toBe(true);
+  });
+});
+
+describe("askMultiSelect", () => {
+  const agents = [
+    { value: "claude-code", label: "Claude Code" },
+    { value: "codex", label: "Codex" },
+  ];
+
+  it("submits the rows ticked on opening", async () => {
+    const io = scriptedIO();
+    io.keys(KEY.enter);
+    expect(await askMultiSelect("Agents", agents, { checked: ["codex"], io })).toEqual(["codex"]);
+  });
+
+  it("toggles the highlighted row with space", async () => {
+    const io = scriptedIO();
+    io.keys(KEY.space, KEY.down, KEY.space, KEY.enter);
+    expect(await askMultiSelect("Agents", agents, { checked: ["codex"], io })).toEqual([
+      "claude-code",
+    ]);
+  });
+
+  it("returns null when cancelled", async () => {
+    const io = scriptedIO();
+    io.keys(KEY.escape);
+    expect(await askMultiSelect("Agents", agents, { checked: [], io })).toBeNull();
   });
 });
 

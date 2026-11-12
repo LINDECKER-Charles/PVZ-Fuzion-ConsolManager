@@ -94,7 +94,7 @@ describe("App state", () => {
 
 describe("main menu dispatch", () => {
   it("maps every menu key to a screen", () => {
-    expect([...MAIN_MENU_ACTIONS.keys()].sort()).toEqual([1, 2, 3, 4]);
+    expect([...MAIN_MENU_ACTIONS.keys()].sort()).toEqual([1, 2, 3, 4, 5]);
   });
 
   it("mainMenu returns the user's choice", async () => {
