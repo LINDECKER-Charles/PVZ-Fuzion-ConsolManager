@@ -166,8 +166,10 @@ github/codeql-action was bumped. package.json still reads 1.6.0.
 - The landing page is outside the npm tarball (`files` in package.json remains `dist/`, `data/`,
   `README.md`, `README.dist.md`).
 - `vitest.config.ts` was not changed: `tests/site/**` runs under `npm test` via the existing
-  `tests/**/*.test.ts` include, but coverage `include` is still `src/**/*.ts`, so `site/src/` is not
-  counted in the 75% gate. Observed from the config, not stated in any commit.
+  `tests/**/*.test.ts` include. Coverage `include` still reads `src/**/*.ts`, but vitest 4 matches
+  that glob at any depth, so the `site/src/` modules imported by `tests/site/` are counted in the
+  75% gate (the DOM-side files no test imports are not). Measured with `npm run test:cov`, not
+  stated in any commit.
 - Whether the one-time GitHub Pages setup (source = GitHub Actions) has been done is not visible in
   git; the workflow documents that the deploy job fails at 'Configure Pages' until it is.
 - The README.dist.md rewrite of the 'Migrate tips & buffs' behaviour (4df68ca) is a documentation
