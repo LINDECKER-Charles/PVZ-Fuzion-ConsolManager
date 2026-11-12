@@ -46,6 +46,17 @@ updates:
       - dependency-name: "typescript"
         versions: ["7.x"]
 
+      # `vitest` is held on 4.x for as long as Node 20 is supported: vitest 5
+      # declares `node ^22.12.0 || ^24.0.0 || >=26.0.0`, while `engines` promises
+      # `>=20` and the CI `test` job runs the suite on Node 20 to prove it. A
+      # runner outside its own support range cannot be that proof — that is why
+      # #31 was declined. Security fixes still land on the 4.x line (4.1.12
+      # cleared two `@vitest/mocker` advisories). Drop both entries with Node 20.
+      - dependency-name: "vitest"
+        versions: ["5.x"]
+      - dependency-name: "@vitest/*"
+        versions: ["5.x"]
+
     # Every group below covers all update types, majors included. Splitting a
     # lockstep pair across two PRs is what produced the `vitest ^2` +
     # `@vitest/coverage-v8 ^4` tree that had to be repaired by hand in 3026f97,
