@@ -10,7 +10,8 @@ For the notes that were actually published with each version, see
 
 | Version | Period | Commits | Tag | npm | GitHub release |
 | --- | --- | ---: | --- | --- | --- |
-| [Unreleased](unreleased.md) | 2026-08-08 → 2026-08-22 | 9 | — | — | — |
+| [Unreleased](unreleased.md) | — | 0 | — | — | — |
+| [v1.7.0](v1.7.0.md) | 2026-08-08 → 2026-11-12 | 66 | `v1.7.0` | pending | [yes](../release/v1.7.0.md) |
 | [v1.6.0](v1.6.0.md) | 2026-08-08 | 13 | `c2ee3f1` | 2026-08-08 | [yes](../release/v1.6.0.md) |
 | [v1.5.0](v1.5.0.md) | 2026-07-20 → 2026-08-08 | 18 | — | — | [never published](../release/v1.5.0.md) |
 | [v1.4.1](v1.4.1.md) | 2026-07-14 | 2 | `6444e36` | 2026-07-14 | [yes](../release/v1.4.1.md) |

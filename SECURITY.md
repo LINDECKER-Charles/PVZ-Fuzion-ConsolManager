@@ -17,8 +17,8 @@ version on npm; older lines are not backported.
 
 | Version | Supported |
 | ------- | --------- |
-| 1.6.x   | ✅        |
-| < 1.6   | ❌        |
+| 1.7.x   | ✅        |
+| < 1.7   | ❌        |
 
 Node.js 20 or later is required (see `engines` in `package.json`). Running the
 CLI on an end-of-life Node release is out of scope.

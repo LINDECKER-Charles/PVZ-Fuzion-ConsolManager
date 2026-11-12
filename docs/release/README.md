@@ -7,6 +7,7 @@ history behind each version see [../changelog/](../changelog/README.md).
 
 | Version | Date | Tag → commit | GitHub | npm | Notes |
 | --- | --- | --- | --- | --- | --- |
+| [v1.7.0](v1.7.0.md) | 2026-11-12 | `v1.7.0` → `chore(release): v1.7.0` | ✅ | ⏳ | Every tool as a headless command with `--json`, `[5] AI agents` installing the bundled Agent Skill, website and documentation set. |
 | [v1.6.0](v1.6.0.md) | 2026-08-08 | `v1.6.0` → `c2ee3f1` | ✅ | ✅ | Documentation tab, console rebuilt on `@clack/prompts`, size and complexity limits enforced by ESLint. |
 | [v1.5.0](v1.5.0.md) | 2026-08-08 | — | ❌ | ❌ | Bumped in `package.json`, never published; folded into 1.6.0 the same afternoon. Draft notes kept. |
 | [v1.4.1](v1.4.1.md) | 2026-07-14 | `v1.4.1` → `6444e36` | ✅ | ✅ | New `travel_buffs.json` structure (`category:id` → `{ name, desc }`). |
