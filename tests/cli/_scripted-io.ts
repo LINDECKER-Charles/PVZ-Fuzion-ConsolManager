@@ -11,6 +11,7 @@ const ANSI = /\u001B\[[0-9;?]*[A-Za-z]/g;
 export const KEY = {
   down: "\u001B[B",
   enter: "\r",
+  space: " ",
   escape: "\u001B",
   ctrlC: "\u0003",
 } as const;

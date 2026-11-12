@@ -198,6 +198,21 @@ export function findTranslationType(key: number): TranslationType | undefined {
   return TRANSLATION_TYPES.find((type) => type.key === key);
 }
 
+/** Missing entries of one category, for one locale. */
+export interface CategoryCount {
+  category: string;
+  missing: number;
+}
+
+/** Scan one locale, category by category, writing each category's report. */
+export function scanLocale(
+  request: ScanRequest,
+  locale: string,
+  types: readonly TranslationType[] = TRANSLATION_TYPES,
+): CategoryCount[] {
+  return types.map((type) => ({ category: type.label, missing: type.scan(request, locale) }));
+}
+
 /**
  * Scan `locales` and return the total number of missing entries.
  *
@@ -212,8 +227,8 @@ export function runScan(
   let total = 0;
   for (const locale of locales) {
     if (locale === request.sourceLocale) continue;
-    for (const type of types) {
-      total += type.scan(request, locale);
+    for (const { missing } of scanLocale(request, locale, types)) {
+      total += missing;
     }
   }
   return total;

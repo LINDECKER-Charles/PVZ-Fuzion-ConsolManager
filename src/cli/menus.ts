@@ -22,6 +22,7 @@ import {
   type CANCEL_SYMBOL,
   confirm,
   isCancel,
+  multiselect,
   select,
   text,
 } from "@clack/prompts";
@@ -126,6 +127,37 @@ export async function askText(
     return defaultValue;
   }
   return answer.trim() || defaultValue;
+}
+
+/** One checkbox row of {@link askMultiSelect}. */
+export interface CheckboxOption {
+  value: string;
+  label: string;
+  hint?: string;
+}
+
+/** What a multi-select starts with, and which streams it talks to. */
+export interface MultiSelectPrompt {
+  /** Values ticked when the prompt opens. */
+  checked: readonly string[];
+  io?: ConsoleIO;
+}
+
+/** Tick any number of rows; `null` when cancelled. At least one row is required. */
+export async function askMultiSelect(
+  label: string,
+  options: readonly CheckboxOption[],
+  prompt: MultiSelectPrompt,
+): Promise<string[] | null> {
+  const answer = await multiselect<string>({
+    message: THEME.heading(label),
+    options: options.map((option) => ({ ...option, label: THEME.primary(option.label) })),
+    initialValues: [...prompt.checked],
+    maxItems: MAX_VISIBLE_ITEMS,
+    required: true,
+    ...streams(prompt.io ?? defaultIO),
+  });
+  return isCancel(answer) ? null : answer;
 }
 
 export async function askConfirm(

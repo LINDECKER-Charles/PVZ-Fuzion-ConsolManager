@@ -12,8 +12,10 @@ toolkit knows how to read, see [catalog.md](catalog.md).
   - [2 — Translator tools](#2--translator-tools)
   - [3 — Documentation](#3--documentation)
   - [4 — Settings](#4--settings)
+  - [5 — AI agents](#5--ai-agents)
 - [Headless CLI](#headless-cli)
 - [Using it in CI](#using-it-in-ci)
+- [Using it from a coding agent](#using-it-from-a-coding-agent)
 
 ---
 
@@ -22,6 +24,7 @@ toolkit knows how to read, see [catalog.md](catalog.md).
 | Tool | Version | Why |
 | --- | --- | --- |
 | Node.js | **20 or newer** | The whole engine is TypeScript bundled to ESM. |
+| Node.js | 22.20 or newer | Only for installing the agent skill from `[5] AI agents`. |
 | A terminal | any modern one | Interactive mode needs a TTY; the commands do not. |
 | Git | any | Only to clone and contribute. |
 
@@ -76,7 +79,9 @@ is rejected and the previous value kept — then remembered across runs
 ## Interactive console
 
 Launch with no arguments. Move with the arrow keys, confirm with `Enter`, and leave the
-current screen with `Esc` or `Ctrl+C`.
+current screen with `Esc` or `Ctrl+C`. Without a terminal — stdin or stdout piped,
+redirected, or driven by a script or an agent — it refuses to start, prints a pointer to
+`--help` and exits with code `2`: use the [headless commands](#headless-cli) there.
 
 ```text
 ┌  PVZF CONSOLE
@@ -94,6 +99,7 @@ current screen with `Esc` or `Ctrl+C`.
 │  ○ Translator tools      migrate · trello · duplicates
 │  ○ Documentation         PR recap → contributor docs
 │  ○ Settings
+│  ○ AI agents             install the skill for Claude Code, Codex…
 │  ○ Exit
 └
 ```
@@ -223,28 +229,69 @@ values and the exact path of the settings file in use.
 
 Full reference, defaults and file locations: [configuration.md](configuration.md).
 
+### 5 — AI agents
+
+Installs the `pvzf-console` [Agent Skill](https://agentskills.io) — the instructions a coding
+agent reads to drive the [headless commands](#headless-cli) — into the agents found on this
+machine: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and the other agents the
+[`skills`](https://github.com/vercel-labs/skills) installer knows.
+
+1. Choose where: **Every project** (the agents' folders in your user directory) or **This
+   folder only** (the agents' folders inside the working directory).
+2. The screen lists the agents it detected and whether each already has the skill.
+3. Tick the agents to install it for — the ones still missing it are ticked already — and
+   confirm. The skill is copied from the installed package, so reinstalling is how you update
+   it after upgrading `pvzf-console`.
+
+Agents load skills when a session starts: restart the ones already open. Installing needs
+Node.js 22.20 or newer; on an older Node.js, or when no agent is detected, the screen prints
+the equivalent shell command instead:
+
+```bash
+npx skills add LINDECKER-Charles/PVZ-Fuzion-ConsolManager --skill pvzf-console
+```
+
 ---
 
 ## Headless CLI
 
+Every tool of the console also runs as a one-shot command, with no prompt and no terminal
+needed:
+
 ```bash
+pvzf-console --help                       # the commands; `<command> --help` for one of them
 pvzf-console diff --lang French
 pvzf-console diff --lang German --out ./out --with-diff
-pvzf-console pr-resume
+pvzf-console duplicates --lang French --json
+pvzf-console trello --lang German --project-root /games/PvZ_Fusion_Translator
 pvzf-console pr-resume --input recap.md --output docs/contributions.md
 ```
 
 | Command | Effect |
 | --- | --- |
-| `pvzf-console` | Launch the interactive console. |
-| `diff --lang <locale>` | Run every category for that locale, writing to `reports/<locale>/`. |
-| `diff --lang <locale> --out <dir>` | Same, writing to `<dir>/<locale>/` instead. |
-| `diff --lang <locale> --with-diff` | Same, plus `*_diff.json` next to each Markdown report. |
-| `pr-resume` | Contributor summary from the first candidate `.md` in the working directory. |
-| `pr-resume --input <f> --output <f>` | Same, with both paths given. |
+| `diff --lang <locale>` | Every category of *Show what's missing*, writing to `reports/<locale>/`. `--with-diff` adds the `*_diff.json` files. |
+| `duplicates --lang <locale>` | *Check duplicates*, writing `reports/<locale>/duplicates.md` when there are findings. |
+| `trello --lang <locale>` | *Export Trello CSV*, writing to `exports/<locale>/`. |
+| `migrate-tips --lang <locale>` | *Migrate tips & buffs* — writes into the game folder, never over an existing file. |
+| `migrate-levels --lang <locale>` | *Migrate custom levels* — same guarantee. |
+| `pr-resume [--input <f>] [--output <f>]` | Contributor summary; the recap defaults to the first candidate `.md` in the working directory, the output to the configured default. |
 
-Long flags only, no aliases; `--name value` and `--name=value` are both accepted. Any
-unknown flag is rejected the way `argparse` would.
+Options shared by every command:
+
+| Option | Effect |
+| --- | --- |
+| `--project-root <dir>` | Use this `PvZ_Fusion_Translator/` folder for the run, without saving it to the settings. |
+| `--json` | Print exactly one JSON document on stdout; warnings still go to stderr. |
+| `--help`, `-h` | Print the help of the command and exit. |
+
+`--out <dir>` relocates the `reports/` or `exports/` root of `diff`, `duplicates` and
+`trello`. `--version` prints the installed version. Options take `--name value` or
+`--name=value`; an unknown command or option, a missing value or a stray argument is rejected
+the way `argparse` would — one `error:` line on stderr, exit code `2`.
+
+With `--json`, the document is `{ "ok": true, "command": …, "result": { … } }` on success — the
+result carries the counts and the paths written — and
+`{ "ok": false, "command": …, "error": { "message": …, "exitCode": … } }` on failure.
 
 Auto-detection of the recap skips repository boilerplate — `README.md`, `README.dist.md`,
 `CHANGELOG.md`, `LICENSE.md`, `CONTRIBUTING.md`, `release.md` — and the output file itself.
@@ -254,8 +301,8 @@ Auto-detection of the recap skips repository boilerplate — `README.md`, `READM
 | Code | Meaning |
 | --- | --- |
 | `0` | Success. |
-| `1` | Runtime failure — recap missing, unreadable, or lacking its two header lines. |
-| `2` | Invalid arguments, unknown locale, target equal to the source locale, or an invalid project root (no `Localization/` subfolder). |
+| `1` | Runtime failure — recap missing, unreadable, or lacking its two header lines; an unexpected read or write error. |
+| `2` | Invalid arguments, unknown locale, target equal to the source locale, an invalid project root (no `Localization/` subfolder), or no terminal for the interactive console. |
 
 Locale names are case-sensitive and must match a folder under `Localization/`. On an unknown
 locale the error message lists the ones that exist.
@@ -270,6 +317,21 @@ that fails when a locale regresses:
 - run: test ! -s reports/French/missing_strings.md   # example gate
 ```
 
-`pr-resume` regenerates the contributor documentation when the weekly PR merges. Both
-commands honour `PVZF_CONSOLE_SETTINGS`, which is the clean way to pin a settings file in a
-runner instead of relying on the per-user config directory.
+`pr-resume` regenerates the contributor documentation when the weekly PR merges. Every
+command honours `PVZF_CONSOLE_SETTINGS`, which is the clean way to pin a settings file in a
+runner instead of relying on the per-user config directory; `--project-root` overrides the
+game folder for a single run.
+
+## Using it from a coding agent
+
+Coding agents (Claude Code, Codex, Cursor…) drive the toolkit through the headless commands
+with `--json`. Three files tell them how:
+
+| File | For | How the agent gets it |
+| --- | --- | --- |
+| [`skills/pvzf-console/SKILL.md`](../../skills/pvzf-console/SKILL.md) | Agents that **use** the CLI | `[5] AI agents` in the console, or `npx skills add LINDECKER-Charles/PVZ-Fuzion-ConsolManager --skill pvzf-console` |
+| [`AGENTS.md`](../../AGENTS.md) | Agents that **change** this repository | Read from the clone; Claude Code reaches it through `CLAUDE.md` |
+| [`llms.txt`](https://lindecker-charles.github.io/PVZ-Fuzion-ConsolManager/llms.txt) | Language models looking the project up | Served by the landing page |
+
+The skill is shipped inside the npm package, so the version an agent reads always matches the
+CLI installed next to it once reinstalled from `[5] AI agents`.

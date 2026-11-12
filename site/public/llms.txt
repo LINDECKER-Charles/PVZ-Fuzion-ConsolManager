@@ -1,0 +1,25 @@
+# PVZF Console
+
+> Command-line translation toolkit for *Plants vs Zombies: Fusion*, published on npm as `@charles_lindecker/pvzf-console`. It diffs each locale of the game's localization files against the source locale, writes per-locale Markdown and JSON reports, finds duplicate keys and values, creates missing tips and custom-level files, exports Trello CSV backlogs and turns weekly PR recaps into contributor documentation. It runs locally, with no network access.
+
+Agents should drive it headlessly: `npx -y @charles_lindecker/pvzf-console <command> --json`, where the command is `diff`, `duplicates`, `trello`, `migrate-tips`, `migrate-levels` or `pr-resume`. Without a command it starts an interactive console that needs a terminal. `--help` works globally and per command; `--project-root <dir>` points it at the game's `PvZ_Fusion_Translator/` folder. Exit codes: 0 success, 1 runtime failure, 2 usage error.
+
+## Docs
+
+- [Agent skill](https://raw.githubusercontent.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/main/skills/pvzf-console/SKILL.md): how an agent runs every command, reads its JSON output and handles errors
+- [Usage](https://raw.githubusercontent.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/main/docs/guide/usage.md): every screen of the console and every headless command with its options
+- [Outputs](https://raw.githubusercontent.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/main/docs/guide/outputs.md): the reports, JSON diffs and CSV files each tool writes
+- [Catalog](https://raw.githubusercontent.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/main/docs/guide/catalog.md): the translation categories and the game files behind them
+- [Configuration](https://raw.githubusercontent.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/main/docs/guide/configuration.md): settings, where they are stored, how the game folder is found
+- [Troubleshooting](https://raw.githubusercontent.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/main/docs/guide/troubleshooting.md): common errors and their fixes
+
+## Contributing
+
+- [AGENTS.md](https://raw.githubusercontent.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/main/AGENTS.md): conventions, commands and invariants for coding agents changing the code
+- [Architecture](https://raw.githubusercontent.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/main/docs/internals/architecture.md): layers, directory map, seams and extension points
+
+## Optional
+
+- [README](https://raw.githubusercontent.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/main/README.md): project overview and installation
+- [CONTRIBUTING.md](https://raw.githubusercontent.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/main/CONTRIBUTING.md): development setup, npm scripts, pull request checklist
+- [Changelog](https://raw.githubusercontent.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/main/docs/changelog/README.md): release history

@@ -1,44 +1,27 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync } from "node:fs";
 import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { main } from "../../src/cli/main";
-import { AppSettings } from "../../src/settings";
-import { createTempProject, type TempProject } from "../helpers";
+import { REPO_ROOT } from "../../src/config";
 import { fakeDeps } from "./_fakes";
+import { type CapturedStreams, captureStreams } from "./headless/_streams";
 
 describe("main", () => {
-  let project: TempProject;
-  let outSpy: any;
-  let errSpy: any;
+  let streams: CapturedStreams;
 
   beforeEach(() => {
-    project = createTempProject();
-    outSpy = vi.spyOn(process.stdout, "write").mockReturnValue(true);
-    errSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    streams = captureStreams();
   });
 
   afterEach(() => {
-    outSpy.mockRestore();
-    errSpy.mockRestore();
-    project.cleanup();
-  });
-
-  it("runs the diff command and returns exit code 0", async () => {
-    project.makeLocale("English", { strings: { "translation_strings.json": { k: "V" } } });
-    project.makeLocale("French");
-    const { exitCode } = await main(["diff", "--lang", "French"], {
-      deps: fakeDeps(),
-      settings: new AppSettings({ projectRoot: project.root, sourceLocale: "English" }),
-      reportsRoot: path.join(project.root, "..", "reports"),
-    });
-    expect(exitCode).toBe(0);
+    streams.restore();
   });
 
   it("returns exit code 2 for a bogus subcommand", async () => {
     const { exitCode } = await main(["bogus"], { deps: fakeDeps() });
     expect(exitCode).toBe(2);
+    expect(streams.stderr()).toContain("invalid choice");
   });
 
   it("falls through to the interactive TUI when no command is given", async () => {
@@ -47,42 +30,28 @@ describe("main", () => {
       askChoice: () => Promise.resolve(0), // [0] Exit immediately
       panel: (_lines: readonly string[], title?: string) => panels.push(title ?? ""),
     });
-    const { exitCode } = await main([], { deps });
+    const { exitCode } = await main([], { deps, isInteractiveTerminal: () => true });
     expect(exitCode).toBe(0);
     expect(panels).toContain("Status");
   });
 
-  it("runs the pr-resume command and returns exit code 0", async () => {
-    const cwd = mkdtempSync(path.join(tmpdir(), "pvzf-docs-"));
-    try {
-      writeFileSync(
-        path.join(cwd, "recap.md"),
-        [
-          "2026-04-01..2026-04-07",
-          "https://github.com/owner/repo/pull/123",
-          "",
-          "## 🌱 Newly Added Plants",
-          "",
-          "@someone :",
-          "* **Briseur de Machoir** (`seedType: 1390`)",
-        ].join("\n"),
-        "utf-8",
-      );
-      const { exitCode } = await main(["pr-resume", "--input", "recap.md"], {
-        deps: fakeDeps(),
-        cwd,
-      });
-      expect(exitCode).toBe(0);
-      expect(existsSync(path.join(cwd, "contribution-summary.md"))).toBe(true);
-    } finally {
-      rmSync(cwd, { recursive: true, force: true });
-    }
+  it("refuses to start the TUI without a terminal and points to --help", async () => {
+    const deps = fakeDeps({ askChoice: () => Promise.reject(new Error("prompted")) });
+    const { exitCode } = await main([], { deps, isInteractiveTerminal: () => false });
+    expect(exitCode).toBe(2);
+    expect(streams.stderr()).toContain("pvzf-console --help");
   });
 
-  it("returns exit code 1 when the recap cannot be read", async () => {
-    const { exitCode } = await main(["pr-resume", "--input", "does-not-exist.md"], {
-      deps: fakeDeps(),
-    });
-    expect(exitCode).toBe(1);
+  it("prints the program help on stdout", async () => {
+    const { exitCode } = await main(["--help"]);
+    expect(exitCode).toBe(0);
+    expect(streams.stdout()).toContain("Commands:");
+  });
+
+  it("prints the version of package.json", async () => {
+    const manifest = JSON.parse(readFileSync(path.join(REPO_ROOT, "package.json"), "utf-8"));
+    const { exitCode } = await main(["--version"]);
+    expect(exitCode).toBe(0);
+    expect(streams.stdout().trim()).toBe(manifest.version);
   });
 });

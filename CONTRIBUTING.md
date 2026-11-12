@@ -4,6 +4,9 @@ Thanks for taking the time. Issues, bug reports and pull requests are all welcom
 small, single-maintainer project, so a short issue before a large pull request usually saves
 everyone effort.
 
+Working with a coding agent? [AGENTS.md](AGENTS.md) carries these rules in the form agents
+read; Claude Code reaches it through `CLAUDE.md`.
+
 - [Ways to help](#ways-to-help)
 - [Development setup](#development-setup)
 - [npm scripts](#npm-scripts)
@@ -109,9 +112,10 @@ Beyond the numbers:
 - **Guard clauses over nesting**, pure functions where possible, and a function that needs an
   "and" to be described should be two functions.
 - **Booleans read as questions**: `isDumpsSource`, `hasDuplicates`, `shouldRetry`.
-- **Keep the runtime dependency-free.** The engine is plain Node plus the standard library;
-  the only runtime dependencies are the two terminal ones already present, and adding a third
-  needs a good reason — every one of them lands on end users' machines.
+- **Keep the runtime dependency-free.** The engine is plain Node plus the standard library.
+  The only runtime dependencies are the two terminal ones and `skills`, the Agent Skills
+  installer behind the *AI agents* screen — loaded lazily, since it needs Node 22.20+. Adding
+  another needs a good reason: every one of them lands on end users' machines.
 - **ESM and strict TypeScript.** `node:` specifiers for built-ins, extension-less intra-package
   imports, no `any` in `src/`.
 - **Comments earn their place.** Explain a *why* that the code cannot; skip the rest.
@@ -164,12 +168,14 @@ The scope is mandatory and comes from the path you touched:
 | `src/tools/pr-resume/**` | `tools/pr-resume` |
 | `src/tools/**` | `tools` |
 | `src/config.ts`, `src/settings.ts`, `src/settings-storage.ts` | `settings` |
+| `skills/**` | `skills` |
+| `site/**` | `site` |
 | `data/**` | `data` |
 | `.github/workflows/**` | `workflows` |
 | `.github/**` | `ci` |
-| `tsconfig.json`, `tsup.config.ts`, `vitest.config.ts`, `package*.json` | `infra` |
+| `tsconfig.json`, `tsup*.config.ts`, `vitest.config.ts`, `package*.json` | `infra` |
 | `eslint.config.mjs`, `.semgrep.yml`, `.gitleaks.toml` | `lint` |
-| `README*.md`, `docs/**` | `docs` |
+| `README*.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`, `docs/**` | `docs` |
 
 One commit is one coherent change: group by feature, never mix two subjects. Tests travel
 with the code they test. A commit whose type is `ci` and which only touches `.github/` is

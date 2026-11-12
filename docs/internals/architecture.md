@@ -21,8 +21,8 @@ see [catalog.md](../guide/catalog.md).
 ## Design goals
 
 1. **Local-first, no ambient authority.** The tool reads and writes files on the machine it
-   runs on. No network, no credentials, no telemetry. Two runtime dependencies, both for the
-   terminal UI.
+   runs on. No network, no credentials, no telemetry. Three runtime dependencies: two for the
+   terminal UI, and the Agent Skills installer, loaded only by the *AI agents* screen.
 2. **A translator's work is sacred.** Nothing overwrites an existing locale file, nothing is
    written before the user has seen what it will contain, and a cancelled prompt performs no
    action.
@@ -57,9 +57,16 @@ src/
 ├── settings.ts                AppSettings: values, validation, resolution
 ├── settings-storage.ts        where settings.json lives, and how it is read/written
 ├── cli/
-│   ├── main.ts                parse argv, then dispatch: command or interactive session
-│   ├── args.ts                minimal argparse-equivalent, usage errors as exit code 2
-│   ├── commands.ts            headless `diff` and `pr-resume`
+│   ├── main.ts                parse argv, then dispatch: help, version, command or session
+│   ├── headless/              everything that runs without a terminal
+│   │   ├── command.ts         HeadlessCommand contract, exit codes, result helpers
+│   │   ├── parser.ts          argparse-style argv parsing, usage errors as exit code 2
+│   │   ├── help.ts            program and per-command help, rendered from the registry
+│   │   ├── registry.ts        the list of headless commands
+│   │   ├── runner.ts          --project-root, validation, text or --json output
+│   │   ├── locale-target.ts   the shared --lang option and its checks
+│   │   ├── version.ts         --version, read from package.json
+│   │   └── commands/          diff · duplicates · trello · migrate-* · pr-resume
 │   ├── app.ts                 the interactive session: state, main menu, dispatch
 │   ├── context.ts             AppContext — the narrow contract screens depend on
 │   ├── deps.ts                AppDeps — the injectable terminal bundle
@@ -87,6 +94,10 @@ src/
     ├── migration.ts           tips/buffs and custom-level builders
     ├── trello-export.ts       card collection, then delegation to the CSV writer
     ├── duplicate-checker.ts   duplicate keys and repeated values
+    ├── agent-skills/          install the bundled Agent Skill into coding agents
+    │   ├── gateway.ts         the port the AI agents screen depends on
+    │   ├── skills-library.ts  its implementation over the `skills` library (lazy, Node 22.20+)
+    │   └── bundled-skill.ts   where skills/pvzf-console/ sits in the package
     └── pr-resume/             PR recap → contributor documentation
         ├── index.ts           orchestration, input/output resolution
         ├── parser.ts          header split, section/contributor/bullet detection
@@ -94,6 +105,9 @@ src/
         ├── renderer.ts        final Markdown rendering
         └── period.ts          ISO range → dd/mm/yy
 ```
+
+Outside `src/`, `skills/pvzf-console/SKILL.md` is the skill shipped in the npm package for
+agents that *use* the CLI, and `AGENTS.md` holds the rules for agents that *change* it.
 
 The folder split is load-bearing, not cosmetic: the project caps a directory at ten files, so
 `cli/screens/` exists because `cli/` filled up, and `tools/pr-resume/` exists because that
@@ -106,12 +120,22 @@ theme, redirects parser notices into the app's own warning channel — a raw str
 tear through clack's gutter mid-prompt — then branches:
 
 ```text
-argv ──▶ parseCliArgs
-          ├── CliArgError ─────────────▶ stderr + exit 2
-          ├── { command: "diff" } ─────▶ cmdDiff      ─▶ runScan ─▶ exit 0 | 2
-          ├── { command: "pr-resume" }─▶ cmdPrResume  ─▶ generateContributionSummary ─▶ exit 0 | 1
-          └── { command: null } ───────▶ App.runInteractive ─▶ exit 0
+argv ──▶ parseInvocation(argv, HEADLESS_COMMANDS)
+          ├── CliArgError ──────────▶ stderr + exit 2
+          ├── version / help ───────▶ stdout + exit 0
+          ├── run(command, input) ──▶ runCommand ─▶ command.run(app, input) ─▶ exit 0 | 1 | 2
+          └── interactive ──────────┬▶ no TTY ─▶ stderr + exit 2
+                                    └▶ App.runInteractive ─▶ exit 0
 ```
+
+A headless command is a `HeadlessCommand` descriptor — name, summary, options, whether it
+needs a valid project root, and a `run` returning a `CommandResult` — registered in
+`headless/registry.ts`. The parser, the help screens and the runner all read that registry,
+so a new command is one file plus one line. `runCommand` owns the cross-cutting part: it
+applies `--project-root` in memory, validates the root, turns an exception into exit code
+`1`, and prints either text lines or, with `--json`, a single
+`{ ok, command, result | error }` document on stdout; warnings always go to stderr so the
+JSON stays parseable.
 
 `main()` returns a `MainResult` instead of calling `process.exit`; only `cli.ts` applies the
 code. That keeps the whole program drivable from a test.
@@ -167,6 +191,13 @@ therefore reports a skipped locale without knowing what a terminal is.
 malformed files through it. `main()` points it at the app's warning channel, tests point it
 wherever they like, and nothing in `parsers/` learns about the UI.
 
+**`AgentSkillsGateway` — the installer port.** The *AI agents* screen detects agents and
+installs the skill through this two-method interface; `loadAgentSkillsGateway()` returns either
+an implementation over the `skills` library or the reason it cannot run (Node.js older than
+22.20, library failing to load). The library is imported dynamically, so the rest of the CLI
+keeps running on Node 20, and tests drive the screen with a fake gateway that never touches
+the real agent folders.
+
 **Settings persistence.** `settings.ts` holds values and validation; `settings-storage.ts`
 owns location and serialisation, including the snake_case on-disk format and the legacy
 in-package path still read for upgrades. Saving returns a reason string instead of throwing:
@@ -183,7 +214,8 @@ These are the rules the code is built to keep. Breaking one is a bug, not a desi
 | The contributor summary is rendered before it is written | `dryRun` preview then explicit confirmation in `screens/documentation.ts` |
 | A category with nothing to report produces no file | every `build*Report` / `build*Diff` returns `null` on an empty input |
 | A malformed or missing input never crashes a run | `loadJson` returns `{}` and reports a notice |
-| No network call, ever | there is no HTTP client in the dependency tree |
+| No network call, ever | the toolkit has no HTTP client; the `skills` library, which has one, is only handed the local `skills/` folder, with `telemetry: false` (`tools/agent-skills/skills-library.ts`) |
+| Headless runs never block on a prompt | `main()` refuses the TUI without a TTY; `--json` output is one document on stdout |
 | Reports stay copy-pasteable | source JSON is kept verbatim in `raw`; table cells escape backslashes before pipes |
 | Settings files round-trip across versions | unknown keys dropped on load, no field ever renamed, new fields get a default |
 
@@ -213,7 +245,7 @@ whose object keys come from the game's own JSON, so `detect-object-injection` an
 
 ## Testing strategy
 
-[Vitest](https://vitest.dev/), 32 suites under `tests/`, mirroring the `src/` layout. The
+[Vitest](https://vitest.dev/), 41 suites under `tests/`, mirroring the `src/` layout. The
 coverage gate is 75% on lines, functions, branches and statements; the suite currently sits
 well above it.
 
@@ -233,10 +265,13 @@ rather than a behaviour.
 ## Build and distribution
 
 `tsup` bundles `src/cli.ts` into a single ESM file at `dist/cli.js`, targeting Node 20, with
-the `#!/usr/bin/env node` shebang injected so the file is directly executable. The two runtime
-dependencies stay external and are installed by npm alongside the CLI.
+the `#!/usr/bin/env node` shebang injected so the file is directly executable. The three runtime
+dependencies stay external and are installed by npm alongside the CLI; `skills` declares Node
+22.20+, so npm prints an engine warning when installing on Node 20, where the *AI agents*
+screen falls back to printing the `npx skills add` command.
 
-The published tarball ships `dist/`, `data/` (the ASCII banner) and both READMEs. `bin` maps
+The published tarball ships `dist/`, `data/` (the ASCII banner), `skills/` (the Agent Skill)
+and both READMEs. `bin` maps
 `pvzf-console` to `dist/cli.js`, so the command works the moment `npm install -g` finishes.
 `prepublishOnly` re-runs the bundler, so a publish can never ship a stale `dist/`.
 
@@ -256,6 +291,7 @@ reducer tested without a DOM.
 | --- | --- |
 | Add a translation category | Follow the four-step drill in [CONTRIBUTING.md](../../CONTRIBUTING.md#adding-a-translation-category) |
 | Add a screen | Write it in `cli/screens/`, register it in the parent menu's action map, take `AppContext` as its only argument |
+| Add a headless command | Write a `HeadlessCommand` in `cli/headless/commands/`, add it to `HEADLESS_COMMANDS`, document it in `usage.md` and `skills/pvzf-console/SKILL.md` |
 | Add a prompt type | Add it to `AppDeps` and `realDeps()`, then use it from a screen — never import `menus.ts` from a screen directly |
 | Add an output format | Put the writer in `reporting/`, call it from the `tools/` orchestration that owns the data |
 | Add a setting | Add the field with a default in `AppSettings`, map it in `settings-storage.ts`, add the editor in `screens/settings-editors.ts` |

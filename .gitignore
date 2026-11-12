@@ -14,7 +14,6 @@ coverage/
 # point-in-time audits, release drafts and announcement copy (see docs/archived/README.md).
 docs/archived/
 graphify-out
-CLAUDE.md
 
 npm-debug.log*
 yarn-error.log*

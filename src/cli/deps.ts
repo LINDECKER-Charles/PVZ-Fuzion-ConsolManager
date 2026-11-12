@@ -11,10 +11,12 @@ import { stdout } from "node:process";
 
 import { renderTitle } from "./banner";
 import {
+  type CheckboxOption,
   type MenuOption,
   askChoice,
   askChoiceFromList,
   askConfirm,
+  askMultiSelect,
   askText,
   selectLocalization,
 } from "./menus";
@@ -55,6 +57,12 @@ export interface AppDeps {
   askChoiceFromList(label: string, values: readonly string[], current: string): Promise<string>;
   askText(label: string, defaultValue?: string): Promise<string>;
   askConfirm(label: string, defaultValue?: boolean): Promise<boolean>;
+  /** `null` when cancelled; otherwise at least one value. */
+  askMultiSelect(
+    label: string,
+    options: readonly CheckboxOption[],
+    checked: readonly string[],
+  ): Promise<string[] | null>;
   /** `null` when the picker is cancelled — the caller must leave the screen. */
   selectLocalization(
     root: string,
@@ -87,6 +95,7 @@ export function realDeps(io: ConsoleIO = defaultIO): AppDeps {
       askChoiceFromList(label, values, { current, io }),
     askText: (label, defaultValue = "") => askText(label, defaultValue, io),
     askConfirm: (label, defaultValue = false) => askConfirm(label, defaultValue, io),
+    askMultiSelect: (label, options, checked) => askMultiSelect(label, options, { checked, io }),
     selectLocalization: (root, opts) => selectLocalization(root, opts, io),
     clearConsole,
     pressEnterToContinue: () => pressEnterToContinue(io),
