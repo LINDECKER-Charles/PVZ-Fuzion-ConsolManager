@@ -291,7 +291,9 @@ the way `argparse` would — one `error:` line on stderr, exit code `2`.
 
 With `--json`, the document is `{ "ok": true, "command": …, "result": { … } }` on success — the
 result carries the counts and the paths written — and
-`{ "ok": false, "command": …, "error": { "message": …, "exitCode": … } }` on failure.
+`{ "ok": false, "command": …, "error": { "message": …, "exitCode": … } }` on failure. Argument
+errors are caught before any command runs, so they stay a plain `error:` line on stderr with an
+empty stdout, `--json` or not; `--version` is only recognised as the first argument.
 
 Auto-detection of the recap skips repository boilerplate — `README.md`, `README.dist.md`,
 `CHANGELOG.md`, `LICENSE.md`, `CONTRIBUTING.md`, `release.md` — and the output file itself.

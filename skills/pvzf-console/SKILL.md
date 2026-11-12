@@ -55,6 +55,10 @@ user's game folder (they never overwrite an existing file): confirm with the use
 Exit codes: `0` success · `1` runtime failure (unreadable file…) · `2` bad arguments, unknown
 locale, source locale used as a target, or invalid game folder.
 
+Bad arguments (unknown command or option, missing value, missing `--lang`) are rejected before
+the command runs: exit code `2`, one `error:` line on stderr and **nothing on stdout**, even with
+`--json`. Check the exit code before parsing stdout.
+
 ## Typical flow
 
 1. `pvzf-console diff --lang French --json` → which categories still have missing entries.
