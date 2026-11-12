@@ -4,6 +4,9 @@ Thanks for taking the time. Issues, bug reports and pull requests are all welcom
 small, single-maintainer project, so a short issue before a large pull request usually saves
 everyone effort.
 
+Working with a coding agent? [AGENTS.md](AGENTS.md) carries these rules in the form agents
+read; Claude Code reaches it through `CLAUDE.md`.
+
 - [Ways to help](#ways-to-help)
 - [Development setup](#development-setup)
 - [npm scripts](#npm-scripts)
@@ -164,12 +167,14 @@ The scope is mandatory and comes from the path you touched:
 | `src/tools/pr-resume/**` | `tools/pr-resume` |
 | `src/tools/**` | `tools` |
 | `src/config.ts`, `src/settings.ts`, `src/settings-storage.ts` | `settings` |
+| `skills/**` | `skills` |
+| `site/**` | `site` |
 | `data/**` | `data` |
 | `.github/workflows/**` | `workflows` |
 | `.github/**` | `ci` |
-| `tsconfig.json`, `tsup.config.ts`, `vitest.config.ts`, `package*.json` | `infra` |
+| `tsconfig.json`, `tsup*.config.ts`, `vitest.config.ts`, `package*.json` | `infra` |
 | `eslint.config.mjs`, `.semgrep.yml`, `.gitleaks.toml` | `lint` |
-| `README*.md`, `docs/**` | `docs` |
+| `README*.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`, `docs/**` | `docs` |
 
 One commit is one coherent change: group by feature, never mix two subjects. Tests travel
 with the code they test. A commit whose type is `ci` and which only touches `.github/` is

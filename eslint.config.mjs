@@ -11,11 +11,11 @@ import globals from "globals";
  *   - typescript-eslint recommended (NON type-checked: keeps lint fast, no
  *     program build; the `npm run typecheck` script covers type-aware checks)
  *   - eslint-plugin-security recommended
- *   - the numeric limits declared in CLAUDE.md, so "vérifiable" means the
+ *   - the numeric limits declared in AGENTS.md, so "vérifiable" means the
  *     linter actually verifies them instead of leaving them to review
  */
 
-/** Size and complexity ceilings — mirror of the CLAUDE.md table. */
+/** Size and complexity ceilings — mirror of the AGENTS.md table. */
 const LIMIT_RULES = {
   "max-lines": ["error", { max: 300, skipBlankLines: false, skipComments: false }],
   "max-lines-per-function": [
