@@ -23,6 +23,7 @@
   "files": [
     "dist/",
     "data/",
+    "skills/",
     "README.md",
     "README.dist.md"
   ],
@@ -62,6 +63,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "picocolors": "^1.1.1"
+    "picocolors": "^1.1.1",
+    "skills": "^1.8.1"
   }
 }
