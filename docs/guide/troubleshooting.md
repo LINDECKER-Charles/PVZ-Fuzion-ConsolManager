@@ -5,6 +5,7 @@ Symptom, cause, fix. If none of this matches, open an
 `node --version`, and what the console printed.
 
 - [Install and launch](#install-and-launch)
+- [AI agents](#ai-agents)
 - [Finding the game files](#finding-the-game-files)
 - [Scanning](#scanning)
 - [Migrations](#migrations)
@@ -20,8 +21,17 @@ Symptom, cause, fix. If none of this matches, open an
 | Symptom | What is going on | Fix |
 | --- | --- | --- |
 | `command not found: pvzf-console` | The package is not installed globally, or npm's global `bin` is not on your `PATH`. | Install Node 20 or newer, then `npm install -g @charles_lindecker/pvzf-console` — or skip the install entirely with `npx @charles_lindecker/pvzf-console`. |
-| The console prints the first menu and exits immediately | Interactive mode needs a TTY; you piped or redirected stdin. | Use the headless commands (`diff`, `pr-resume`) for scripted runs. |
+| `error: the interactive console needs a terminal`, exit code `2` | No command was given and stdin or stdout is not a TTY: piped, redirected, or run by a script or an agent. | Pass a command — `pvzf-console --help` lists them. |
 | A syntax error mentioning `??=` or `import` | Node is older than 20. | Upgrade Node — the bundle targets Node 20. |
+
+## AI agents
+
+| Symptom | What is going on | Fix |
+| --- | --- | --- |
+| `Cannot install from here: installing skills needs Node.js 22.20 or newer` | The `skills` installer behind the screen requires Node 22.20+; the rest of the console still runs on Node 20. | Upgrade Node, or run the printed `npx skills add …` command from a shell. |
+| `No coding agent detected on this machine.` | None of the agents the installer knows has its configuration folder in your user directory (or, for *This folder only*, in the working directory). | Start the agent once so it creates its folder, then retry — or use the printed `npx skills add …` command and pick the agent by hand. |
+| `<agent>: agent folder not found`, or another per-agent error | The agent has no skills folder in the chosen scope — some agents only read skills per project, or only per user. | Retry with the other scope. |
+| The agent does not use the skill | Agents load their skills when a session starts. | Restart the agent; check the skill under its `skills/pvzf-console/` folder. |
 
 ## Finding the game files
 

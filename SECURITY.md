@@ -1,9 +1,12 @@
 # Security Policy
 
 `@charles_lindecker/pvzf-console` is a local-first CLI: it reads the game's
-localization files from disk, writes reports next to them, and ships two runtime
-dependencies (`@clack/prompts`, `picocolors`). It has no server component and
-stores no credentials of its own. Vulnerabilities therefore mostly look like
+localization files from disk, writes reports next to them, and ships three runtime
+dependencies: `@clack/prompts` and `picocolors` for the terminal, and `skills`,
+which copies the bundled agent skill into the coding agents' folders (user
+directory or working directory) when asked to from the *AI agents* menu — always
+from the local package, with its telemetry turned off. It has no server
+component and stores no credentials of its own. Vulnerabilities therefore mostly look like
 path traversal, unsafe file writes, command/argument injection, or a compromised
 dependency reaching an end user's machine.
 

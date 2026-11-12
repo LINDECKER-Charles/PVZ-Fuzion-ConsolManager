@@ -112,9 +112,10 @@ Beyond the numbers:
 - **Guard clauses over nesting**, pure functions where possible, and a function that needs an
   "and" to be described should be two functions.
 - **Booleans read as questions**: `isDumpsSource`, `hasDuplicates`, `shouldRetry`.
-- **Keep the runtime dependency-free.** The engine is plain Node plus the standard library;
-  the only runtime dependencies are the two terminal ones already present, and adding a third
-  needs a good reason — every one of them lands on end users' machines.
+- **Keep the runtime dependency-free.** The engine is plain Node plus the standard library.
+  The only runtime dependencies are the two terminal ones and `skills`, the Agent Skills
+  installer behind the *AI agents* screen — loaded lazily, since it needs Node 22.20+. Adding
+  another needs a good reason: every one of them lands on end users' machines.
 - **ESM and strict TypeScript.** `node:` specifiers for built-ins, extension-less intra-package
   imports, no `any` in `src/`.
 - **Comments earn their place.** Explain a *why* that the code cannot; skip the rest.

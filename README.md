@@ -32,7 +32,7 @@ contributor documentation.
 
 [![locales](https://img.shields.io/badge/locales-19-2ea44f)](docs/guide/catalog.md)
 [![translation types](https://img.shields.io/badge/translation%20types-8-2ea44f)](docs/guide/catalog.md)
-[![runtime deps](https://img.shields.io/badge/runtime%20deps-2-2ea44f)](package.json)
+[![runtime deps](https://img.shields.io/badge/runtime%20deps-3-2ea44f)](package.json)
 [![sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-EA4AAA?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/LINDECKER-Charles)
 [![ko-fi](https://img.shields.io/badge/ko--fi-buy%20me%20a%20coffee-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/charleslindecker)
 [![stars](https://img.shields.io/github/stars/LINDECKER-Charles/PVZ-Fuzion-ConsolManager?style=social)](https://github.com/LINDECKER-Charles/PVZ-Fuzion-ConsolManager/stargazers)
@@ -76,8 +76,10 @@ npm run dev                                      # live TUI from source, via tsx
 | <img src="docs/assets/icon-export.svg" width="26" alt=""> | **Export & audit** | One Trello-ready CSV per category plus a generated import guide, and a duplicate scanner that catches repeated JSON keys and translations reused across keys. |
 | <img src="docs/assets/icon-docs.svg" width="26" alt=""> | **Author the docs** | Splits the weekly translation-PR recap into one Markdown block per contributor, counters included — the lead's *Reviews* block is derived, not typed. |
 
-Everything runs locally: no network call, no telemetry, no account. Two runtime dependencies
-([`@clack/prompts`](https://github.com/bombshell-dev/clack), `picocolors`), one bundled file.
+Everything runs locally: no network call, no telemetry, no account. One bundled file and three
+runtime dependencies: [`@clack/prompts`](https://github.com/bombshell-dev/clack) and
+`picocolors` for the terminal, [`skills`](https://github.com/vercel-labs/skills) for installing
+the agent skill.
 
 ---
 
@@ -93,6 +95,7 @@ Move with the arrow keys, confirm with `Enter`, leave any screen with `Esc`.
 │  ○ Translator tools      migrate · trello · duplicates
 │  ○ Documentation         PR recap → contributor docs
 │  ○ Settings
+│  ○ AI agents             install the skill for Claude Code, Codex…
 │  ○ Exit
 └
 ```
@@ -104,14 +107,33 @@ whole set at once, and a cancelled prompt never triggers the action it interrupt
 
 ## Using it headlessly
 
+Every tool also runs as a one-shot command — `diff`, `duplicates`, `trello`, `migrate-tips`,
+`migrate-levels`, `pr-resume`:
+
 ```bash
+pvzf-console --help                                      # commands, then `<command> --help`
 pvzf-console diff --lang French                          # every category, one locale
 pvzf-console diff --lang German --out ./out --with-diff  # custom root + JSON diffs
-pvzf-console pr-resume --input recap.md --output docs/contributions.md
+pvzf-console trello --lang French --json                 # one JSON document on stdout
+pvzf-console duplicates --lang French --project-root ../PvZ_Fusion_Translator
 ```
 
 Exit codes are CI-friendly: `0` success, `1` runtime failure, `2` bad arguments or unknown
 locale. Details in [docs/guide/usage.md](docs/guide/usage.md#headless-cli).
+
+## Using it from a coding agent
+
+Claude Code, Codex, Cursor and the other coding agents drive the headless commands with
+`--json`. Teach them how by installing the bundled [Agent Skill](skills/pvzf-console/SKILL.md):
+from the console's **AI agents** menu, which detects the agents on your machine (Node 22.20+),
+or from a shell:
+
+```bash
+npx skills add LINDECKER-Charles/PVZ-Fuzion-ConsolManager --skill pvzf-console
+```
+
+Agents working on this repository read [AGENTS.md](AGENTS.md); language models looking the
+project up get [llms.txt](https://lindecker-charles.github.io/PVZ-Fuzion-ConsolManager/llms.txt).
 
 ---
 
@@ -132,7 +154,7 @@ Exact anatomy of every generated artifact: [docs/guide/outputs.md](docs/guide/ou
 
 | Document | What's in it |
 | --- | --- |
-| [docs/guide/usage.md](docs/guide/usage.md) | Install, every menu screen, the headless commands, exit codes. |
+| [docs/guide/usage.md](docs/guide/usage.md) | Install, every menu screen, the headless commands, exit codes, coding agents. |
 | [docs/guide/catalog.md](docs/guide/catalog.md) | Every file, locale and category the toolkit handles — and what it deliberately ignores. |
 | [docs/guide/configuration.md](docs/guide/configuration.md) | Settings reference, where `settings.json` lives, environment overrides. |
 | [docs/guide/outputs.md](docs/guide/outputs.md) | The shape of every report, JSON diff, CSV and summary produced. |
@@ -140,6 +162,7 @@ Exact anatomy of every generated artifact: [docs/guide/outputs.md](docs/guide/ou
 | [docs/guide/troubleshooting.md](docs/guide/troubleshooting.md) | Symptom → cause → fix. |
 | [Website](https://lindecker-charles.github.io/PVZ-Fuzion-ConsolManager/) | The landing page, with a console you can drive from the browser. Source in [`site/`](site/). |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, code standards, commit convention, how to add a translation type. |
+| [AGENTS.md](AGENTS.md) | The same rules for coding agents working on the repository. |
 | [SECURITY.md](SECURITY.md) | Threat model, supported versions, private reporting. |
 | [docs/release/](docs/release/README.md) | What shipped, version by version — the GitHub release notes, kept in the repository. |
 | [docs/changelog/](docs/changelog/README.md) | The full technical history, every commit accounted for, from the 2025 prototype to today. |

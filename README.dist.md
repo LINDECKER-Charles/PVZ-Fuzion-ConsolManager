@@ -6,7 +6,8 @@ and tells you exactly **what's still missing**, then generates ready-to-use
 Markdown reports and Trello CSVs — and writes the weekly contributor
 documentation from your PR recap.
 
-Just Node, and two tiny dependencies for the terminal UI.
+Just Node, two tiny dependencies for the terminal UI, and one to hand the tool over to your
+coding agent.
 
 ---
 
@@ -53,6 +54,7 @@ screen. The main menu always looks like this:
 │  ○ Translator tools      migrate · trello · duplicates
 │  ○ Documentation         PR recap → contributor docs
 │  ○ Settings
+│  ○ AI agents             install the skill for Claude Code, Codex…
 │  ○ Exit
 └
 ```
@@ -184,31 +186,53 @@ set `PVZF_CONSOLE_SETTINGS` to the full path you want. Coming from an older
 version that stored `settings.json` next to the program? It is picked up
 automatically on first launch — nothing to redo.
 
+### [5] AI agents
+
+Lets a coding agent — Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot… —
+run the toolkit for you. The screen finds the agents installed on your machine,
+shows which already know the tool, and installs the `pvzf-console` skill (their
+instructions for the commands below) for the ones you tick, either for every
+project or for the current folder only. Restart the agents that are already open.
+
+Installing from this screen needs **Node.js 22.20 or newer**. Otherwise — or if
+no agent is found — the screen gives you the shell command instead:
+
+```bash
+npx skills add LINDECKER-Charles/PVZ-Fuzion-ConsolManager --skill pvzf-console
+```
+
 ---
 
 ## ⚡ Power-user mode
 
-Skip the menus and run a single locale from the command line:
+Every tool also runs straight from the command line, without the menus:
 
 ```bash
+pvzf-console --help                              # every command
+pvzf-console diff --help                         # the options of one command
 pvzf-console diff --lang French
 pvzf-console diff --lang German --out ./out/german
 pvzf-console diff --lang French --with-diff      # also write *_diff.json
-```
-
-Same for the contributor documentation:
-
-```bash
-pvzf-console pr-resume                                   # first .md in the folder
+pvzf-console duplicates --lang French
+pvzf-console trello --lang French                # CSVs in exports/French/
+pvzf-console migrate-tips --lang French          # never overwrites a file
+pvzf-console migrate-levels --lang French
 pvzf-console pr-resume --input recap.md --output docs/contributions.md
 ```
 
+Add `--project-root <folder>` to point at another `PvZ_Fusion_Translator/` for
+one run, and `--json` to get one JSON document on stdout — handy for scripts and
+coding agents.
+
 - Exits `0` on success.
-- Exits `1` when the recap can't be read or is missing its two header lines.
+- Exits `1` on a runtime failure, e.g. a recap that can't be read or is missing
+  its two header lines.
 - Exits `2` on bad arguments or an invalid/unknown locale (name lookup is
   case-sensitive).
 
-Use it from batch scripts or CI to flag regressions automatically.
+Use it from batch scripts or CI to flag regressions automatically. Without a
+command, in a window that isn't an interactive terminal, the tool says so and
+exits `2` instead of waiting for keys that will never come.
 
 ---
 
@@ -242,7 +266,9 @@ a time using the Blue Cat plugin — the instructions in
 - The duplicate checker.
 - The Trello CSV exporter + import guide generator.
 - The PR-recap → contributor-documentation generator.
-- A configurable interactive TUI and a headless CLI.
+- A configurable interactive TUI and a headless CLI with JSON output.
+- The `pvzf-console` Agent Skill, and an installer for the coding agents on
+  your machine.
 
 No telemetry, no network calls, no data leaves your machine.
 

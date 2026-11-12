@@ -106,6 +106,13 @@ PVZF_CONSOLE_SETTINGS=./ci-settings.json pvzf-console diff --lang French
 Resolution order is: the environment override, then the per-user config directory, then the
 legacy in-package path.
 
+For a single headless run, `--project-root <dir>` replaces the configured game folder without
+writing it to the settings file:
+
+```bash
+pvzf-console diff --lang French --project-root /games/PvZ_Fusion_Translator
+```
+
 ## Upgrading from 1.4.1 or earlier
 
 Versions up to 1.4.1 kept `settings.json` inside the installed package. That file is still
